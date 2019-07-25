@@ -1,0 +1,21 @@
+#!/bin/bash
+./crowded_random_walk 100000 100000 0.05 1
+./crowded_random_walk 100000 100000 0.10 1
+./crowded_random_walk 100000 100000 0.15 1
+./crowded_random_walk 100000 100000 0.20 1
+./crowded_random_walk 100000 100000 0.25 1
+./crowded_random_walk 100000 100000 0.30 1
+./crowded_random_walk 100000 100000 0.35 1
+./crowded_random_walk 100000 100000 0.40 1
+./crowded_random_walk 100000 100000 0.45 1
+./crowded_random_walk 100000 100000 0.50 1
+./crowded_random_walk 100000 100000 0.55 1
+./crowded_random_walk 100000 100000 0.60 1
+./crowded_random_walk 100000 100000 0.65 1
+./crowded_random_walk 100000 100000 0.70 1
+./crowded_random_walk 100000 100000 0.75 1
+./crowded_random_walk 100000 100000 0.80 1
+./crowded_random_walk 100000 100000 0.85 1
+./crowded_random_walk 100000 100000 0.90 1
+./crowded_random_walk 100000 100000 0.95 1
+./crowded_random_walk 100000 100000 1.00 1

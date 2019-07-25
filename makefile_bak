@@ -1,0 +1,13 @@
+IDIR=./header
+CC=g++
+CFLAGS=-I$(IDIR) -lm -std=c++11 -Wall -Ofast
+
+SRC = ./src/global.cpp ./src/tracer.cpp ./src/lattice.cpp ./src/output.cpp
+
+$(info $$SRC is [${SRC}])
+
+lg_traps : ./src/lattice_gas_with_traps.cpp $(SRC)
+	$(CC) $(CFLAGS) $^ -o $@
+
+cr_rw: ./src/crowded_random_walk.cpp $(SRC)
+	$(CC) $(CFLAGS) $^ -o $@
