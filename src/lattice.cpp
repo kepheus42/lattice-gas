@@ -4,25 +4,56 @@
 #include "lattice.hpp"
 #include "global.hpp"
 
-Lattice::Lattice(int grid_size_x, int grid_size_y, int number_of_tracers_1x1, int number_of_tracers_2x2) : m_t(0),  m_grid_size_x(grid_size_x), m_grid_size_y(grid_size_y), m_number_of_tracers_1x1(number_of_tracers_1x1), m_number_of_tracers_2x2(number_of_tracers_2x2){
+Lattice::Lattice(int grid_size_x, int grid_size_y, int number_of_tracers_1x1, int number_of_tracers_2x2, int number_of_tracers_3x3) : m_t(0),  m_grid_size_x(grid_size_x), m_grid_size_y(grid_size_y), m_number_of_tracers_1x1(number_of_tracers_1x1), m_number_of_tracers_2x2(number_of_tracers_2x2), m_number_of_tracers_2x2(number_of_tracers_3x3){
         // check if there's enough space on the grid to place the tracers
-        if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2) {
+        if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2 + 9*number_of_tracers_3x3) {
                 throw std::invalid_argument("Too many tracers for grid of the given size!");
         }
         // create a vector to handle the randomization of the order of movement every timestep
-        this->m_movement_order.reserve(number_of_tracers_1x1 + number_of_tracers_2x2);
-        for (int n = 0; n < number_of_tracers_1x1 + number_of_tracers_2x2; n++) {
+        this->m_movement_order.reserve(number_of_tracers_1x1 + number_of_tracers_2x2 + number_of_tracers_3x3);
+        for (int n = 0; n < number_of_tracers_1x1 + number_of_tracers_2x2 + number_of_tracers_3x3; n++) {
                 m_movement_order.push_back(n);
         }
         // create a vector to store pointers to all the tracers
-        this->m_tracers.reserve(number_of_tracers_1x1 + number_of_tracers_2x2);
+        this->m_tracers.reserve(number_of_tracers_1x1 + number_of_tracers_2x2 + number_of_tracers_3x3);
         // create a vector to store the state of the lattice
         this->m_occupation_map.reserve(grid_size_x * grid_size_y);
         for(int i=0; i < grid_size_x * grid_size_y; i++)
         {
                 this->m_occupation_map[i] = 0;
         }
-        // tmp vector to handle site allocation for 2x2 tracers
+        // tmp vector to handle start position allocation for 3x3 tracers
+        std::vector<int> tmp_start_positions_3x3;
+        tmp_start_positions_3x3.reserve(grid_size_x/3 * grid_size_y/3);
+        for (int y=0; y < grid_size_y; y+=3)
+        {
+                for (int x=0; x < grid_size_x; x+=3)
+                {
+                        tmp_start_positions_3x3.push_back(x * grid_size_y + y);
+                }
+        }
+        // create the 3x3 tracers:
+        tmp_start_positions_2x2 = shuffle_vector(tmp_start_positions_2x2);
+        int tmp_x;
+        int tmp_y;
+        int tmp_id = 1;
+        for (int n = 0; n < number_of_tracers_3x3; n++)
+        {
+                tmp_y = tmp_start_positions_3x3[n] % grid_size_y;
+                tmp_x = (tmp_start_positions_3x3[n] - tmp_y)/grid_size_y;
+                this->m_tracers.push_back(new Tracer_3x3(tmp_id,tmp_x,tmp_y,grid_size_x,grid_size_y));
+                this->m_occupation_map[tmp_x * grid_size_y + tmp_y] = tmp_id;
+                this->m_occupation_map[(tmp_x+1)%grid_size_x * grid_size_y + tmp_y] = tmp_id;
+                this->m_occupation_map[(tmp_x+2)%grid_size_x * grid_size_y + tmp_y] = tmp_id;
+                this->m_occupation_map[tmp_x * grid_size_y + (tmp_y+1)%grid_size_y] = tmp_id;
+                this->m_occupation_map[(tmp_x+1)%grid_size_x * grid_size_y + (tmp_y+1)%grid_size_y] = tmp_id;
+                this->m_occupation_map[(tmp_x+2)%grid_size_x * grid_size_y + (tmp_y+1)%grid_size_y] = tmp_id;
+                this->m_occupation_map[tmp_x * grid_size_y + (tmp_y+2)%grid_size_y] = tmp_id;
+                this->m_occupation_map[(tmp_x+1)%grid_size_x * grid_size_y + (tmp_y+2)%grid_size_y] = tmp_id;
+                this->m_occupation_map[(tmp_x+2)%grid_size_x * grid_size_y + (tmp_y+2)%grid_size_y] = tmp_id;
+                tmp_id++;
+        }
+        // tmp vector to handle start position allocation for 2x2 tracers
         std::vector<int> tmp_start_positions_2x2;
         tmp_start_positions_2x2.reserve(grid_size_x/2 * grid_size_y/2);
         for (int y=0; y < grid_size_y; y+=2)

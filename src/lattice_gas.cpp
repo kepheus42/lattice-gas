@@ -27,7 +27,9 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - -
         std::vector<double> output;
         std::string output_file_name;
+        std::string header_string;
         output_file_name = "X_"+std::to_string(grid_size_x)+"_Y_"+std::to_string(grid_size_y)+"_N1_"+std::to_string(number_of_tracers_1x1)+"_N2_"+std::to_string(number_of_tracers_2x2)+".bin";
+        header_string = "Hello!";
         // TODO: search for files with output_file_name in their name
         // set a counter to n+1 where n is in output_file_name_n
         // if none exist, start with n=0
@@ -67,6 +69,6 @@ int main(int ac, char** av){
         output.push_back(lattice->get_avg_lsquared_1x1());
         output.push_back(lattice->get_avg_lsquared_2x2());
 
-        vector_to_file(output,output_file_name);
+        vector_to_file(output,output_file_name,header_string);
 
 }

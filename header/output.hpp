@@ -1,5 +1,5 @@
 #ifndef OUTPUT_H
-#define OUTPUT_H value
+#define OUTPUT_H
 
 #include <fstream>
 #include <vector>
@@ -8,6 +8,5 @@
 
 void vector_to_file(std::vector<int>, std::string);
 void vector_to_file(std::vector<double>, std::string);
-
 
 #endif

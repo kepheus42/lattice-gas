@@ -277,13 +277,11 @@ void Tracer_2x2::unhindered_step(){
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
 }
 
-
 Tracer_3x3::Tracer_3x3(int id, int x, int y, int grid_size_x, int grid_size_y) : Tracer(id,x,y,grid_size_x,grid_size_y)
 {
         // Change size from default to 9
         this->m_size = 9;
 }
-
 
 void Tracer_3x3::step(std::vector<int> &grid_occupation_vector){
         if(this->m_isstuck) {
