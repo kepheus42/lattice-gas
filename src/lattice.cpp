@@ -4,7 +4,13 @@
 #include "lattice.hpp"
 #include "global.hpp"
 
-Lattice::Lattice(int grid_size_x, int grid_size_y, int number_of_tracers_1x1, int number_of_tracers_2x2, int number_of_tracers_3x3) : m_t(0),  m_grid_size_x(grid_size_x), m_grid_size_y(grid_size_y), m_number_of_tracers_1x1(number_of_tracers_1x1), m_number_of_tracers_2x2(number_of_tracers_2x2), m_number_of_tracers_2x2(number_of_tracers_3x3){
+Lattice::Lattice(int grid_size_x, int grid_size_y, int number_of_tracers_1x1) : m_t(0),  m_grid_size_x(grid_size_x), m_grid_size_y(grid_size_y), m_number_of_tracers_1x1(number_of_tracers_1x1), m_number_of_tracers_2x2(0), m_number_of_tracers_3x3(0) {
+        if (grid_size_x*grid_size_y < number_of_tracers_1x1) {
+                throw std::invalid_argument("Too many tracers for grid of the given size!");
+        }
+}
+
+Lattice::Lattice(int grid_size_x, int grid_size_y, int number_of_tracers_1x1, int number_of_tracers_2x2, int number_of_tracers_3x3) : m_t(0),  m_grid_size_x(grid_size_x), m_grid_size_y(grid_size_y), m_number_of_tracers_1x1(number_of_tracers_1x1), m_number_of_tracers_2x2(number_of_tracers_2x2), m_number_of_tracers_3x3(number_of_tracers_3x3){
         // check if there's enough space on the grid to place the tracers
         if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2 + 9*number_of_tracers_3x3) {
                 throw std::invalid_argument("Too many tracers for grid of the given size!");

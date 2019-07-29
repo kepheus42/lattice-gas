@@ -9,7 +9,10 @@ class Lattice {
 
 public:
 // constructor
-Lattice(int,int,int,int);
+// one species
+Lattice(int,int,int);
+// three species (1x1,2x2,3x3)
+Lattice(int,int,int,int,int);
 // logic
 // computes the 1d linear coordinate from x,y tuple
 int coord(int,int);
