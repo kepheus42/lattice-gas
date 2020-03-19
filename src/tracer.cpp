@@ -5,6 +5,7 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double step_rate) :
         m_id(id),
+        m_size(1),
         m_x(x),
         m_y(y),
         m_dx(0),
@@ -18,12 +19,7 @@ Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double st
         m_grid_size_x(grid_size_x),
         m_grid_size_y(grid_size_y),
         m_lsquared(0.0),
-        m_isstuck(false),
-        m_size(1)
-        //,
-        //m_two_step_correlation(4,0),
-        //m_three_step_correlation(16,0),
-        //m_four_step_correlation(64,0)
+        m_isstuck(false)
 {
 
 }
@@ -169,7 +165,7 @@ void Tracer::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
 void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double current_time){
         // set m_last_move to 0, if the particle makes a move later, overwrite
         // this->m_last_move = 0;
-        this->m_last_step = 0;
+        this->m_last_step = false;
         if(this->m_isstuck)
         {
                 return;
@@ -192,7 +188,7 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_time_since_last_move = current_time-this->m_time_of_last_move;
                         this->m_time_of_last_move = current_time;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->update_last_moves(dir);
@@ -218,7 +214,7 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_time_since_last_move = current_time-this->m_time_of_last_move;
                         this->m_time_of_last_move = current_time;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->update_last_moves(dir);
@@ -244,7 +240,7 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_time_since_last_move = current_time-this->m_time_of_last_move;
                         this->m_time_of_last_move = current_time;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->update_last_moves(dir);
@@ -270,7 +266,7 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_time_since_last_move = current_time-this->m_time_of_last_move;
                         this->m_time_of_last_move = current_time;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->update_last_moves(dir);
@@ -413,7 +409,7 @@ Tracer_2x2::Tracer_2x2(int id, int x, int y, int grid_size_x, int grid_size_y, d
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time){
-        this->m_last_step = 0;
+        this->m_last_step = false;
         if(this->m_isstuck) {
                 return;
         }
@@ -452,7 +448,7 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_since_last_move = this->m_time_of_current_move-this->m_time_of_last_move;
                         this->m_time_of_last_move = this->m_time_of_current_move;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -482,7 +478,7 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_since_last_move = this->m_time_of_current_move-this->m_time_of_last_move;
                         this->m_time_of_last_move = this->m_time_of_current_move;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -512,7 +508,7 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_since_last_move = this->m_time_of_current_move-this->m_time_of_last_move;
                         this->m_time_of_last_move = this->m_time_of_current_move;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -542,7 +538,7 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_since_last_move = this->m_time_of_current_move-this->m_time_of_last_move;
                         this->m_time_of_last_move = this->m_time_of_current_move;
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -599,7 +595,7 @@ Tracer_3x3::Tracer_3x3(int id, int x, int y, int grid_size_x, int grid_size_y, d
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int current_time){
-        this->m_last_step = 0;
+        this->m_last_step = false;
         if(this->m_isstuck) {
                 return;
         }
@@ -644,7 +640,7 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_of_last_move = current_time;
 
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -678,7 +674,7 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_of_last_move = current_time;
 
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -712,7 +708,7 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_of_last_move = current_time;
 
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;
@@ -746,7 +742,7 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int current_time
                         this->m_time_of_last_move = current_time;
 
 
-                        this->m_last_step = 1;
+                        this->m_last_step = true;
                         this->update_wtd_index();
                         this->m_steps_taken++;
                         this->m_time_since_last_move = 0;

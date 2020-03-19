@@ -13,7 +13,8 @@ public:
 Tracer(int,int,int,int,int,double);
 // logic to move the tracer on the 2d lattice
 virtual void step(std::vector<int> &, int, double);
-virtual void unhindered_step();
+virtual void step_warmup(std::vector<int> &, int);
+virtual void step_unhindered();
 //
 void update_last_moves(int);
 //
@@ -56,71 +57,61 @@ std::vector<double> get_relative_three_step_correlation();
 std::vector<double> get_relative_four_step_correlation();
 //
 protected:
+// = = = = = = = = = = = = =
 int m_id;
-// location and distance covered in lattice units along x- and y-direction
+// Integer assigned at creation
+int m_size;
+// size of the tracer in lattice sites
+// = = = = = = = = = = = = =
 int m_x;
 int m_y;
 int m_dx;
 int m_dy;
-// base step rate (0.0 to 1.0)
+// location and distance covered in lattice units along x- and y-direction
+// = = = = = = = = = = = = =
 double m_step_rate;
-// last move of the tracers
-int m_last_step;
+// Base step rate (0.0 to 1.0): how many steps does the tracer take per unit time, on average.
+// = = = = = = = = = = = = =
+bool m_last_step;
+// 1 if the tracers most recent attempt to take a step was valid, 0 otherwise.
+// = = = = = = = = = = = = =
 std::vector<int> m_last_step_dir;
-int m_current_move;
-int m_wtd_index;
-// time when the last move took place, and time elapsed since then
+// Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.
+// This is used to compute the conditional likelyhoods for all possible step sequences with length up to N.
+// = = = = = = = = = = = = =
 double m_time_of_last_move;
 double m_time_since_last_move;
-
+// time when the last move took place, and time elapsed since then
+// = = = = = = = = = = = = =
 int m_steps_taken;
-// dimensions of the parent grid
+// Total number of steps taken, gives actual step rate when divided by number of timesteps.
+// = = = = = = = = = = = = =
 int m_grid_size_x;
 int m_grid_size_y;
-// distance moved squared since birth in lattice units
+// dimensions of the parent grid
+// = = = = = = = = = = = = =
 double m_lsquared;
-// can tracer move?
+// distance moved squared since birth in lattice units
+// = = = = = = = = = = = = =
 bool m_isstuck;
-// size of the tracer in lattice sites
-int m_size;
-// waiting times for different move directions w.r.t. the last move
-// stored in one vector, as:
-// 0 : +x+x
-// 1 : +x-x
-// 2 : +x+y
-// 3 : +x-y
-// next 4 with one delta_t waiting time
-// 4 : +x+0+x
-// 5 : +x+0-x
-// 6 : +x+0+y
-// 7 : +x+0-y
-// etc.
-// TODO: move storage to <lattice> or <wrapper>
-std::vector<int> m_wtd;
-std::vector<int> m_two_step_correlation;
-std::vector<int> m_three_step_correlation;
-std::vector<int> m_four_step_correlation;
+// true if tracer is caught in a trap (TODO: add trapping process to Lattice class), false if not
+// = = = = = = = = = = = = =
 };
 
 class Tracer_2x2 : public Tracer {
 public:
 Tracer_2x2(int,int,int,int,int,double);
-// direction selection in tracer->step function
-void step(std::vector<int> &);
-// direction selection in tracer->step function, m_t as input
-void step(std::vector<int> &, int);
-// direction selection in lattice->timestep function, m_t as input
-void step(std::vector<int> &, int, int);
-void unhindered_step();
+void step(std::vector<int> &, int, double);
+void step_warmup(std::vector<int> &, int);
+void step_unhindered();
 };
 
 class Tracer_3x3 : public Tracer {
 public:
 Tracer_3x3(int,int,int,int,int,double);
-void step(std::vector<int> &);
-void step(std::vector<int> &, int);
-void step(std::vector<int> &, int, int);
-void unhindered_step();
+void step(std::vector<int> &, int, double);
+void step_warmup(std::vector<int> &, int);
+void step_unhindered();
 };
 
 #endif
