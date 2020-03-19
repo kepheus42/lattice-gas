@@ -67,99 +67,6 @@ void Tracer::update_four_step_correlation()
         this->m_four_step_correlation[16*tmp_idx_2+4*tmp_idx_1+tmp_idx_0]++;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::unhindered_step(int dir, int current_time){
-        // function for stepping without collisions/tracer-tracer interaction
-        switch(dir) {
-        case 1:
-        {
-                int new_x = (this->m_x + 1)%this->m_grid_size_x;
-                this->m_x = new_x;
-                this->m_dx++;
-                break;
-        }
-        case 2:
-        {
-                int new_y = (this->m_y + 1)%this->m_grid_size_y;
-                this->m_y = new_y;
-                this->m_dy++;
-                break;
-        }
-        case 3:
-        {
-                int new_x = (this->m_x - 1 + this->m_grid_size_x)%this->m_grid_size_x;
-                this->m_x = new_x;
-                this->m_dx--;
-                break;
-        }
-        case 4:
-        {
-                int new_y = (this->m_y - 1 + this->m_grid_size_y)%this->m_grid_size_y;
-                this->m_y = new_y;
-                this->m_dy--;
-                break;
-        }
-        }
-        this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// Function for steps during warm_up
-// contains only logic for site blocking and trapping
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
-        // if the tracer is trapped, do nothing
-        if(this->m_isstuck) { return; }
-        switch(dir) {
-        case 1:
-        {
-                int new_x = (this->m_x + 1)%this->m_grid_size_x;
-                int & new_site = grid_occupation_vector[new_x * this->m_grid_size_y + this->m_y];
-                if(!new_site) {
-                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
-                        old_site = 0;
-                        this->m_x = new_x;
-                        new_site = this->m_id;
-                }
-                break;
-        }
-        case 2:
-        {
-                int new_y = (this->m_y + 1)%this->m_grid_size_y;
-                int & new_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + new_y];
-                if(!new_site) {
-                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
-                        old_site = 0;
-                        this->m_y = new_y;
-                        new_site = this->m_id;
-                }
-                break;
-        }
-        case 3:
-        {
-                int new_x = (this->m_x - 1 + this->m_grid_size_x)%this->m_grid_size_x;
-                int & new_site = grid_occupation_vector[new_x * this->m_grid_size_y + this->m_y];
-                if(!new_site) {
-                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
-                        old_site = 0;
-                        this->m_x = new_x;
-                        new_site = this->m_id;
-                }
-                break;
-        }
-        case 4:
-        {
-                int new_y = (this->m_y - 1 + this->m_grid_size_y)%this->m_grid_size_y;
-                int & new_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + new_y];
-                if(!new_site) {
-                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
-                        old_site = 0;
-                        this->m_y = new_y;
-                        new_site = this->m_id;
-                }
-                break;
-        }
-        }
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
 // function for random walk stepping
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double current_time){
@@ -276,6 +183,99 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->update_three_step_correlation();
                         this->update_four_step_correlation();
                 }
+                break;
+        }
+        }
+        this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+// Function for steps during warm_up
+// contains only logic for site blocking and trapping
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+void Tracer::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
+        // if the tracer is trapped, do nothing
+        if(this->m_isstuck) { return; }
+        switch(dir) {
+        case 1:
+        {
+                int new_x = (this->m_x + 1)%this->m_grid_size_x;
+                int & new_site = grid_occupation_vector[new_x * this->m_grid_size_y + this->m_y];
+                if(!new_site) {
+                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
+                        old_site = 0;
+                        this->m_x = new_x;
+                        new_site = this->m_id;
+                }
+                break;
+        }
+        case 2:
+        {
+                int new_y = (this->m_y + 1)%this->m_grid_size_y;
+                int & new_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + new_y];
+                if(!new_site) {
+                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
+                        old_site = 0;
+                        this->m_y = new_y;
+                        new_site = this->m_id;
+                }
+                break;
+        }
+        case 3:
+        {
+                int new_x = (this->m_x - 1 + this->m_grid_size_x)%this->m_grid_size_x;
+                int & new_site = grid_occupation_vector[new_x * this->m_grid_size_y + this->m_y];
+                if(!new_site) {
+                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
+                        old_site = 0;
+                        this->m_x = new_x;
+                        new_site = this->m_id;
+                }
+                break;
+        }
+        case 4:
+        {
+                int new_y = (this->m_y - 1 + this->m_grid_size_y)%this->m_grid_size_y;
+                int & new_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + new_y];
+                if(!new_site) {
+                        int & old_site = grid_occupation_vector[this->m_x * this->m_grid_size_y + this->m_y];
+                        old_site = 0;
+                        this->m_y = new_y;
+                        new_site = this->m_id;
+                }
+                break;
+        }
+        }
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+void Tracer::step_unhindered(int dir, double current_time){
+        // function for stepping without collisions/tracer-tracer interaction
+        switch(dir) {
+        case 1:
+        {
+                int new_x = (this->m_x + 1)%this->m_grid_size_x;
+                this->m_x = new_x;
+                this->m_dx++;
+                break;
+        }
+        case 2:
+        {
+                int new_y = (this->m_y + 1)%this->m_grid_size_y;
+                this->m_y = new_y;
+                this->m_dy++;
+                break;
+        }
+        case 3:
+        {
+                int new_x = (this->m_x - 1 + this->m_grid_size_x)%this->m_grid_size_x;
+                this->m_x = new_x;
+                this->m_dx--;
+                break;
+        }
+        case 4:
+        {
+                int new_y = (this->m_y - 1 + this->m_grid_size_y)%this->m_grid_size_y;
+                this->m_y = new_y;
+                this->m_dy--;
                 break;
         }
         }

@@ -14,7 +14,7 @@ Tracer(int,int,int,int,int,double);
 // logic to move the tracer on the 2d lattice
 virtual void step(std::vector<int> &, int, double);
 virtual void step_warmup(std::vector<int> &, int);
-virtual void step_unhindered();
+virtual void step_unhindered(int, double);
 //
 void update_last_moves(int);
 //
