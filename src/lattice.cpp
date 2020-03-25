@@ -263,13 +263,16 @@ void Lattice::timestep(){
         int tmp_rnd; // random number between 0 and 4*length of selector list
         int tmp_par; // which particle moves
         int tmp_dir; // which direction it moves in
+        double tmp_time = (double)this->m_t;
+        double tmp_time_increment = 1.0/(double)this->m_step_attempts_per_timestep;
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                tmp_rnd = this->m_movement_selector[random_int(0,this->m_movement_selector_length)];
-                tmp_par = std::floor(tmp_rnd/4);
+                tmp_rnd = random_int(0,4*this->m_movement_selector_length);
+                tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
                 tmp_dir = 1+tmp_rnd%4;
                 // eacth timestep consists of m_step_attempts_per_timestep equal intervals, thus the time at which a given step attempt takes place is t = m_t + n / m_step_attempts_per_timestep
-                this->m_tracers[tmp_par]->step(this->m_occupation_map,tmp_dir,(double)this->m_t+(double)n/(double)this->m_step_attempts_per_timestep);
+                this->m_tracers[tmp_par]->step(this->m_occupation_map,tmp_dir,tmp_time);
+                tmp_time += tmp_time_increment;
         }
         this->m_t++;
 }
@@ -280,8 +283,8 @@ void Lattice::timestep_warmup(){
         int tmp_dir; // which direction it moves in
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                tmp_rnd = this->m_movement_selector[random_int(0,this->m_movement_selector_length)];
-                tmp_par = std::floor(tmp_rnd/4);
+                tmp_rnd = random_int(0,4*this->m_movement_selector_length);
+                tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
                 tmp_dir = 1+tmp_rnd%4;
                 this->m_tracers[tmp_par]->step_warmup(this->m_occupation_map,tmp_dir);
         }

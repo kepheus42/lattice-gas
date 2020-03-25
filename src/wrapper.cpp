@@ -56,7 +56,7 @@ void Wrapper::timestep(){
         this->update_avg_rate();
         // TODO:
         this->update_wtd();
-        this->update_correlation();
+        this->update_correlations();
         // increment time
         this->m_t++;
 }
@@ -73,28 +73,28 @@ int Wrapper::get_t()
         return this->m_t;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-void Wrapper::update_avg_lsquared(){
+inline void Wrapper::update_avg_lsquared(){
         if(this->m_number_of_tracers_1x1) { this->m_avg_lsquared_1x1[this->m_t] = this->get_avg_lsquared_1x1(); }
         if(this->m_number_of_tracers_2x2) { this->m_avg_lsquared_2x2[this->m_t] = this->get_avg_lsquared_2x2(); }
         if(this->m_number_of_tracers_3x3) { this->m_avg_lsquared_3x3[this->m_t] = this->get_avg_lsquared_3x3(); }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-void Wrapper::update_avg_rate(){
+inline void Wrapper::update_avg_rate(){
         if(this->m_number_of_tracers_1x1) { this->m_avg_rate_1x1[this->m_t] = this->get_avg_rate_1x1(); }
         if(this->m_number_of_tracers_2x2) { this->m_avg_rate_2x2[this->m_t] = this->get_avg_rate_2x2(); }
         if(this->m_number_of_tracers_3x3) { this->m_avg_rate_3x3[this->m_t] = this->get_avg_rate_3x3(); }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-void Wrapper::update_wtd(){
+inline void Wrapper::update_wtd(){
         if(this->m_number_of_tracers_1x1) { this->update_wtd_1x1(); }
         if(this->m_number_of_tracers_2x2) { this->update_wtd_2x2(); }
         if(this->m_number_of_tracers_3x3) { this->update_wtd_3x3(); }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-void Wrapper::update_correlation(){
-        if(this->m_number_of_tracers_1x1) { this->update_correlation_1x1(); }
-        if(this->m_number_of_tracers_2x2) { this->update_correlation_2x2(); }
-        if(this->m_number_of_tracers_3x3) { this->update_correlation_3x3(); }
+inline void Wrapper::update_correlations(){
+        if(this->m_number_of_tracers_1x1) { this->update_correlations_1x1(); }
+        if(this->m_number_of_tracers_2x2) { this->update_correlations_2x2(); }
+        if(this->m_number_of_tracers_3x3) { this->update_correlations_3x3(); }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 double Wrapper::get_avg_rate_1x1(){
@@ -147,14 +147,19 @@ double Wrapper::get_avg_lsquared_3x3(){
         return tmp_sum/this->m_number_of_lattices;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-void Wrapper::update_correlation_1x1(){
+inline void Wrapper::update_wtd_1x1(){
 }
-void Wrapper::update_correlation_2x2(){
+inline void Wrapper::update_wtd_2x2(){
 }
-void Wrapper::update_correlation_3x3(){
+inline void Wrapper::update_wtd_3x3(){
 }
-
-
+// = = = = = = = = = = = = = = = = = = = = = = = = =
+inline void Wrapper::update_correlations_1x1(){
+}
+inline void Wrapper::update_correlations_2x2(){
+}
+inline void Wrapper::update_correlations_3x3(){
+}
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<int> Wrapper::get_wtd_1x1()
 {

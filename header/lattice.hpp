@@ -80,9 +80,9 @@ std::vector<double> get_avg_rate_correlations_3x3();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // get wtds for all tracers
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<int> get_wtd_1x1();
-std::vector<int> get_wtd_2x2();
-std::vector<int> get_wtd_3x3();
+std::vector<unsigned int> get_wtd_1x1();
+std::vector<unsigned int> get_wtd_2x2();
+std::vector<unsigned int> get_wtd_3x3();
 // relative waiting time distributions
 std::vector<double> get_norm_wtd_1x1();
 std::vector<double> get_norm_wtd_2x2();

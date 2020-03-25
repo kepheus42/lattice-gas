@@ -14,8 +14,9 @@ Wrapper(int,int,int,int,int,int,int,double,double,double,int);
 // void init_wtd(int);
 void timestep();
 //
-void update_avg_rate();
-void update_avg_lsquared();
+inline void update_avg_rate();
+inline void update_avg_lsquared();
+inline void update_correlations();
 // - - - - - - - - - - - - - - - - - - - - - - - -
 int get_t();
 // = = = = = = = = = = = = = = = = = = = = = = = =
@@ -53,9 +54,7 @@ std::vector<double> get_norm_wtd_1x1();
 std::vector<double> get_norm_wtd_2x2();
 std::vector<double> get_norm_wtd_3x3();
 // - - - - - - - - - - - - - - - - - - - - - - - -
-// T W O  A N D
-// T H R E E  S T E P
-// C O R R E L A T I O N S
+// DEPRECATED
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // average two step correlations
 // - - - - - - - - - - - - - - - - - - - - - - - -
@@ -87,6 +86,7 @@ std::vector<double> get_avg_four_step_correlation_1x1();
 std::vector<double> get_avg_four_step_correlation_2x2();
 std::vector<double> get_avg_four_step_correlation_3x3();
 // - - - - - - - - - - - - - - - - - - - - - - - -
+// New layout:
 // Getters for sim results:
 // - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<double> get_result_rate_1x1();
@@ -96,6 +96,14 @@ std::vector<double> get_result_rate_3x3();
 std::vector<double> get_result_lsquared_1x1();
 std::vector<double> get_result_lsquared_2x2();
 std::vector<double> get_result_lsquared_3x3();
+// - - - - - - - - - - - - - - - - - - - - - - - -
+std::vector<double> get_result_wtd_1x1();
+std::vector<double> get_result_wtd_2x2();
+std::vector<double> get_result_wtd_3x3();
+// - - - - - - - - - - - - - - - - - - - - - - - -
+std::vector<double> get_result_correlations_1x1();
+std::vector<double> get_result_correlations_2x2();
+std::vector<double> get_result_correlations_3x3();
 // - - - - - - - - - - - - - - - - - - - - - - - -
 
 private:
