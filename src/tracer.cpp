@@ -13,8 +13,12 @@ Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double st
         m_step_rate(step_rate),
         m_last_step(0),
         m_last_step_dir(4,0),
-        m_time_of_last_move(0),
-        m_time_since_last_move(0),
+        m_last_step_idx(4,0),
+        m_last_step_wtd_idx(0),
+        m_wtd_max(wtd_max),
+        m_wtd_res(wtd_res),
+        m_time_of_last_step(0),
+        m_time_since_last_step(0),
         m_steps_taken(0),
         m_grid_size_x(grid_size_x),
         m_grid_size_y(grid_size_y),
@@ -24,49 +28,26 @@ Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double st
 
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-inline void Tracer::update_last_step_dir(int last_step_dir)
+inline void Tracer::update_last_step(int last_step_dir)
 {
         // shift m_last_step_dir by one position
         std::rotate(this->m_last_step_dir.begin(),this->m_last_step_dir.end()-1,this->m_last_step_dir.end());
         // overwrite the move that's now at pos 0 with the most recent one
         this->m_last_step_dir[0] = last_step_dir;
+        int tmp_idx = 0;
+        int tmp_n = 0;
+        for(int step : this->m_last_step_dir)
+        {
+                if(!step) { break; }
+                tmp_idx += (int)std::pow(4,tmp_n)*step;
+                this->m_last_step_idx[tmp_n] = tmp_idx;
+                tmp_n++;
+        }
+        this->m_last_step_wtd_idx = this->m_last_step_idx[1];
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::update_two_step_correlation()
-{
-        // m_two_step_correlation entries represent
-        // 0 : repeated jumps in one direction e.g. +x+x
-        // 1 : turn to the left e.g. +x+y
-        // 2 : 180 degree turn e.g. +x-x
-        // 3 : turn to the right e.g. +x-y
-        if(this->m_steps_taken < 2) { return; }
-        int tmp_last_moves = 10*this->m_last_moves[1]+this->m_last_moves[0];
-        int tmp_idx = std::min((tmp_last_moves%11),((tmp_last_moves+4)%11));
-        this->m_two_step_correlation[tmp_idx]++;
-}
+// coordinate conversion x,y -> vector idx
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::update_three_step_correlation()
-{
-        if(this->m_steps_taken < 3) { return; }
-        int tmp_last_moves_1 = 10*this->m_last_moves[2]+this->m_last_moves[1];
-        int tmp_last_moves_2 = 10*this->m_last_moves[1]+this->m_last_moves[0];
-        int tmp_idx_1 = std::min((tmp_last_moves_1%11),((tmp_last_moves_1+4)%11));
-        int tmp_idx_2 = std::min((tmp_last_moves_2%11),((tmp_last_moves_2+4)%11));
-        this->m_three_step_correlation[4*tmp_idx_1+tmp_idx_2]++;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::update_four_step_correlation()
-{
-        if(this->m_steps_taken < 4) { return; }
-        int tmp_last_moves_0 = 10*this->m_last_moves[1]+this->m_last_moves[0];
-        int tmp_last_moves_1 = 10*this->m_last_moves[2]+this->m_last_moves[1];
-        int tmp_last_moves_2 = 10*this->m_last_moves[3]+this->m_last_moves[2];
-        int tmp_idx_0 = std::min((tmp_last_moves_0%11),((tmp_last_moves_0+4)%11));
-        int tmp_idx_1 = std::min((tmp_last_moves_1%11),((tmp_last_moves_1+4)%11));
-        int tmp_idx_2 = std::min((tmp_last_moves_2%11),((tmp_last_moves_2+4)%11));
-        this->m_four_step_correlation[16*tmp_idx_2+4*tmp_idx_1+tmp_idx_0]++;
-}
-//
 inline int Tracer::coord(int x, int y){
         return x*this->m_grid_size_y+y;
 }
@@ -74,16 +55,9 @@ inline int Tracer::coord(int x, int y){
 // function for random walk stepping
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double current_time){
-        // set m_last_move to 0, if the particle makes a move later, overwrite
-        // this->m_last_move = 0;
+        //
         this->m_last_step = false;
-        if(this->m_isstuck)
-        {
-                return;
-        }
-        // if(random_0_to_1() > this->m_step_rate) {
-        //         return;
-        // }
+        if(this->m_isstuck) { return; }
         switch(dir) {
         case 1:
         {
@@ -96,14 +70,14 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_dx++;
                         new_site = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
                 return;
         }
@@ -118,14 +92,14 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_dy++;
                         new_site = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
                 return;
         }
@@ -140,14 +114,14 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_dx--;
                         new_site = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
                 return;
         }
@@ -162,17 +136,18 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, double curr
                         this->m_dy--;
                         new_site = this->m_id;
                         // for waiting time distribution
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
                 return;
         }
+        default: { return; }
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -231,6 +206,7 @@ void Tracer::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
                 }
                 return;
         }
+        default: { return; }
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -265,13 +241,14 @@ void Tracer::step_unhindered(int dir, double current_time){
                 this->m_dy--;
                 break;
         }
+        default: { return; }
         }
         // since all step attempts are successful, I can do this outside of the switch-case
-        this->m_time_since_last_move = current_time - this->m_time_of_last_move;
-        this->m_time_of_last_move = current_time;
+        this->m_time_since_last_step = current_time - this->m_time_of_last_step;
+        this->m_time_of_last_step = current_time;
         // last but not least, update lsq, last moves
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-        this->update_last_moves(dir);
+        this->update_last_step(dir);
 
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -326,9 +303,13 @@ std::vector<int> Tracer::get_last_step_dir(){
         return this->m_last_step_dir;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-double Tracer::get_time_since_last_move()
+std::vector<int> Tracer::get_last_step_idx(){
+        return this->m_last_step_idx;
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+double Tracer::get_time_since_last_step()
 {
-        return this->m_time_since_last_move;
+        return this->m_time_since_last_step;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 int Tracer::get_steps_taken()
@@ -437,16 +418,16 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
         case 2:
         {
@@ -463,16 +444,16 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
         case 3:
         {
@@ -489,16 +470,16 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
         case 4:
         {
@@ -515,17 +496,18 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int current_time
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
+        default: { return; }
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -560,6 +542,7 @@ void Tracer_2x2::unhindered_step(int dir, int current_time){
                 this->m_dy--;
                 break;
         }
+        default: { return; }
         }
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
 }
@@ -609,16 +592,16 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, double 
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
         case 2:
         {
@@ -640,16 +623,16 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, double 
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
         case 3:
         {
@@ -671,16 +654,16 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, double 
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
         case 4:
         {
@@ -702,17 +685,18 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, double 
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-                        this->m_time_of_last_move = current_time;
+                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_of_last_step = current_time;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
 
                         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-                        this->update_last_moves(dir);
+                        this->update_last_step(dir);
                 }
-                break;
+                return;
         }
+        default: { return; }
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -747,14 +731,13 @@ void Tracer_3x3::unhindered_step(int dir, double current_time){
                 this->m_dy--;
                 break;
         }
+        default: { return; }
         }
-
-        this->m_time_since_last_move = current_time-this->m_time_of_last_move;
-        this->m_time_of_last_move = current_time;
-
+        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+        this->m_time_of_last_step = current_time;
         this->m_last_step = true;
         this->m_steps_taken++;
-
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
-        this->update_last_moves(dir);
+        this->update_last_step(dir);
+        return;
 }

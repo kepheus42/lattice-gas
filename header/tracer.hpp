@@ -18,11 +18,7 @@ virtual void step_warmup(std::vector<int> &, int);
 // this one is the same for all types, therefore not virtual
 void step_unhindered(int, double);
 //
-inline void update_last_moves(int);
-//
-void update_two_step_correlation();
-void update_three_step_correlation();
-void update_four_step_correlation();
+inline void update_last_step(int);
 //
 inline int coord(int,int);
 
@@ -77,10 +73,10 @@ std::vector<int> m_last_step_dir;
 // Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.
 // This is used to compute the conditional likelyhoods for all possible step sequences with length up to N.
 std::vector<int> m_last_step_idx;
-// This vector of length m_last_step_dir.size() - 1 contains the indices of the last 2-N-step sequences
+// This vector of length m_last_step_dir.size() contains the indices of the last 1-N-step sequences
 // = = = = = = = = = = = = =
-double m_time_of_last_move;
-double m_time_since_last_move;
+double m_time_of_last_step;
+double m_time_since_last_step;
 // time when the last move took place, and time elapsed since then
 // = = = = = = = = = = = = =
 int m_steps_taken;

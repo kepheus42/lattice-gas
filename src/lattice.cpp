@@ -13,7 +13,8 @@ Lattice::Lattice(int grid_size_x,
                  double step_rate_1x1,
                  double step_rate_2x2,
                  double step_rate_3x3,
-                 int wtd_max) :
+                 int wtd_max,
+                 int wtd_res) :
         m_t(0),
         m_grid_size_x(grid_size_x),
         m_grid_size_y(grid_size_y),
@@ -34,9 +35,7 @@ Lattice::Lattice(int grid_size_x,
                                      (int)(this->m_number_of_tracers_3x3*this->m_step_rate_3x3)),
         m_occupation_map(grid_size_x*grid_size_y,0),
         m_wtd_max(wtd_max),
-        m_wtd_1x1(4*(wtd_max+1),0),
-        m_wtd_2x2(4*(wtd_max+1),0),
-        m_wtd_3x3(4*(wtd_max+1),0)
+        m_wtd_res(wtd_res)
 {
         // check if there's enough space on the grid to place the tracers
         if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2 + 9*number_of_tracers_3x3)
@@ -184,36 +183,6 @@ void Lattice::setup_tracers()
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-void Lattice::update_avg_lsquared(){
-        if(this->m_number_of_tracers_1x1)
-        {
-                double tmp_sum_lsquared = 0;
-                for(Tracer * tr : this->m_tracers_1x1)
-                {
-                        tmp_sum_lsquared += tr->get_lsquared();
-                }
-                this->m_avg_lsquared_1x1[this->m_t]=(tmp_sum_lsquared/(double)this->m_number_of_tracers_1x1);
-        }
-        if(this->m_number_of_tracers_2x2)
-        {
-                double tmp_sum_lsquared = 0;
-                for(Tracer * tr : this->m_tracers_2x2)
-                {
-                        tmp_sum_lsquared += tr->get_lsquared();
-                }
-                this->m_avg_lsquared_2x2[this->m_t]=(tmp_sum_lsquared/(double)this->m_number_of_tracers_2x2);
-        }
-        if(this->m_number_of_tracers_3x3)
-        {
-                double tmp_sum_lsquared = 0;
-                for(Tracer * tr : this->m_tracers_3x3)
-                {
-                        tmp_sum_lsquared += tr->get_lsquared();
-                }
-                this->m_avg_lsquared_3x3[this->m_t]=(tmp_sum_lsquared/(double)this->m_number_of_tracers_3x3);
-        }
-}
-// - - - - - - - - - - - - - - - - - - - - - - - -
 void Lattice::update_wtd()
 {
         for(Tracer * tr : this->m_tracers_1x1)
@@ -250,7 +219,7 @@ void Lattice::update_wtd()
 // = = = = = = = = = = = = = = = = = = = = = =
 // = = = M E M B E R   F U N C T I O N S = = =
 // = = = = = = = = = = = = = = = = = = = = = =
-int Lattice::coord(int x, int y){
+inline int Lattice::coord(int x, int y){
         //
         return ((x+this->m_grid_size_x)%this->m_grid_size_x)*this->m_grid_size_y+((y+this->m_grid_size_y)%this->m_grid_size_y);
 }
@@ -292,20 +261,19 @@ void Lattice::timestep_warmup(){
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 void Lattice::timestep_no_interaction(){
-        // use this to let all tracers step without interacting
-        int tmp_rnd;         // random number between 0 and 4*length of selector list
-        int tmp_par;         // which particle moves
-        int tmp_dir;         // which direction it moves in
+        int tmp_rnd; // random number between 0 and 4*length of selector list
+        int tmp_par; // which particle moves
+        int tmp_dir; // which direction it moves in
+        double tmp_time = (double)this->m_t;
+        double tmp_time_increment = 1.0/(double)this->m_step_attempts_per_timestep;
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                tmp_rnd = this->m_movement_selector[random_int(0,this->m_movement_selector_length)];
-                tmp_par = std::floor(tmp_rnd/4);
+                tmp_rnd = random_int(0,4*this->m_movement_selector_length);
+                tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
                 tmp_dir = 1+tmp_rnd%4;
-                this->m_tracers[tmp_par]->unhindered_step(tmp_dir,this->m_t);
+                this->m_tracers[tmp_par]->unhindered_step(tmp_dir,tmp_time);
+                tmp_time += tmp_time_increment;
         }
-        this->update_avg_rate();
-        this->update_avg_lsquared();
-        this->update_wtd();
         this->m_t++;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
@@ -365,170 +333,180 @@ int Lattice::get_tracer_position_y(int id)
 {
         return this->m_tracers[id]->get_dy();
 }
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-// Mean squared displacement for the various species
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_avg_lsquared_1x1()
-{
-        return this->m_avg_lsquared_1x1;
-}
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_avg_lsquared_2x2()
+// get vectors containing pointers to all tracers for wrapper class to operate on them
+std::vector<Tracer *> Lattice::get_tracers()
 {
-        return this->m_avg_lsquared_2x2;
+        return this->m_tracers;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_avg_lsquared_3x3()
+std::vector<Tracer *> Lattice::get_tracers_1x1()
 {
-        return this->m_avg_lsquared_3x3;
+        return this->m_tracers_1x1;
+}
+std::vector<Tracer *> Lattice::get_tracers_2x2()
+{
+        return this->m_tracers_2x2;
+}
+std::vector<Tracer *> Lattice::get_tracers_3x3()
+{
+        return this->m_tracers_3x3;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 // instantaneous average stepping rates for the different tracer types
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_avg_rate_1x1()
+double Lattice::get_avg_rate_1x1()
 {
         // returns the current average step rate
         double tmp_sum_steps_taken = 0;
+        if(!this->m_number_of_tracers_1x1) { return tmp_sum_steps_taken; }
         for(Tracer * tr : this->m_tracers_1x1)
         {
                 tmp_sum_steps_taken += (double)tr->get_last_step();
         }
         // if number of tracers, return average, else return 0
-        return(this->m_number_of_tracers_1x1 ? tmp_sum_steps_taken/(double)this->m_number_of_tracers_1x1 : 0);
+        return(tmp_sum_steps_taken/(double)this->m_number_of_tracers_1x1);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_avg_rate_2x2()
+double Lattice::get_avg_rate_2x2()
 {
         // returns the current average step rate
         double tmp_sum_steps_taken = 0;
+        if(!this->m_number_of_tracers_2x2) { return tmp_sum_steps_taken; }
         for(Tracer * tr : this->m_tracers_2x2)
         {
                 tmp_sum_steps_taken += (double)tr->get_last_step();
         }
         // if number of tracers, return average, else return 0
-        return(this->m_number_of_tracers_2x2 ? tmp_sum_steps_taken/(double)this->m_number_of_tracers_2x2 : 0);
+        return(tmp_sum_steps_taken/(double)this->m_number_of_tracers_2x2);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_avg_rate_3x3()
+double Lattice::get_avg_rate_3x3()
 {
         // returns the current average step rate
         double tmp_sum_steps_taken = 0;
+        if(!this->m_number_of_tracers_3x3) { return tmp_sum_steps_taken; }
         for(Tracer * tr : this->m_tracers_3x3)
         {
                 tmp_sum_steps_taken += (double)tr->get_last_step();
         }
         // if number of tracers, return average, else return 0
-        return(this->m_number_of_tracers_3x3 ? tmp_sum_steps_taken/(double)this->m_number_of_tracers_3x3 : 0);
+        return(tmp_sum_steps_taken/(double)this->m_number_of_tracers_3x3);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-// Stepping rate distributions for the different tracer types
-// - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_stepping_rates_1x1()
+double Lattice::get_avg_lsquared_1x1()
 {
-        if(this->m_number_of_tracers_1x1 == 0)
-        {
-                std::vector<double> tmp_stepping_rates = {0.0};
-                return tmp_stepping_rates;
-        }
-        std::vector<double> tmp_stepping_rates;
-        tmp_stepping_rates.reserve(this->m_number_of_tracers_1x1);
+        // returns the current average step rate
+        double tmp_sum_lsquared = 0;
+        if(!this->m_number_of_tracers_1x1) { return tmp_sum_lsquared; }
         for(Tracer * tr : this->m_tracers_1x1)
         {
-                tmp_stepping_rates.push_back((double)tr->get_steps_taken()/(double)this->m_t);
+                tmp_sum_lsquared += tr->get_lsquared();
         }
-        return tmp_stepping_rates;
+        // if number of tracers, return average, else return 0
+        return(tmp_sum_lsquared/(double)this->m_number_of_tracers_1x1);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_stepping_rates_2x2()
+double Lattice::get_avg_lsquared_2x2()
 {
-        if(this->m_number_of_tracers_2x2 == 0)
-        {
-                std::vector<double> tmp_stepping_rates = {0.0};
-                return tmp_stepping_rates;
-        }
-        std::vector<double> tmp_stepping_rates;
-        tmp_stepping_rates.reserve(this->m_number_of_tracers_2x2);
+        // returns the current average step rate
+        double tmp_sum_lsquared = 0;
+        if(!this->m_number_of_tracers_2x2) { return tmp_sum_lsquared; }
         for(Tracer * tr : this->m_tracers_2x2)
         {
-                tmp_stepping_rates.push_back((double)tr->get_steps_taken()/(double)this->m_t);
+                tmp_sum_lsquared += tr->get_lsquared();
         }
-        return tmp_stepping_rates;
+        // if number of tracers, return average, else return 0
+        return(tmp_sum_lsquared/(double)this->m_number_of_tracers_2x2);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_stepping_rates_3x3()
+double Lattice::get_avg_lsquared_3x3()
 {
-        if(this->m_number_of_tracers_3x3 == 0)
-        {
-                std::vector<double> tmp_stepping_rates = {0.0};
-                return tmp_stepping_rates;
-        }
-        std::vector<double> tmp_stepping_rates;
-        tmp_stepping_rates.reserve(this->m_number_of_tracers_3x3);
+        // returns the current average step rate
+        double tmp_sum_lsquared = 0;
+        if(!this->m_number_of_tracers_3x3) { return tmp_sum_lsquared; }
         for(Tracer * tr : this->m_tracers_3x3)
         {
-                tmp_stepping_rates.push_back((double)tr->get_steps_taken()/(double)this->m_t);
+                tmp_sum_lsquared += tr->get_lsquared();
         }
-        return tmp_stepping_rates;
+        // if number of tracers, return average, else return 0
+        return(tmp_sum_lsquared/(double)this->m_number_of_tracers_3x3);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_stepping_rate_distribution_1x1(int tmp_n_bins)
+std::vector<unsigned int> Lattice::get_wtd_1x1()
 {
-        if(this->m_number_of_tracers_1x1 == 0)
+        std::vector<unsigned int> tmp_wtd(4+16*(this->m_wtd_max*this->m_wtd_res+1),0);
+
+        int tmp_wtd_idx = 0;
+        for(Tracer * tr : this->m_tracers_1x1)
         {
-                std::vector<double> tmp_stepping_rate_distribution = {0};
-                return tmp_stepping_rate_distribution;
+                if(tr->get_last_step_wtd_idx())
+                {
+                        tmp_wtd_idx = tr->get_last_step_wtd_idx()+(int)(this->m_wtd_res*tr->get_time_since_last_step());
+                        tmp_wtd[std::min(tmp_wtd_idx,tmp_wtd.size()-1)]++;
+                }
         }
-        std::vector<double> tmp_stepping_rates = this->get_stepping_rates_1x1();
-        std::vector<double> tmp_stepping_rate_distribution(tmp_n_bins,0.0);
-        for(double tmp_r : tmp_stepping_rates)
-        {
-                tmp_stepping_rate_distribution[std::ceil(tmp_r * (double)tmp_n_bins)]++;
-        }
-        for(double & tmp_d : tmp_stepping_rate_distribution)
-        {
-                tmp_d /= this->m_number_of_tracers_1x1;
-        }
-        return tmp_stepping_rate_distribution;
+        return tmp_wtd;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_stepping_rate_distribution_2x2(int tmp_n_bins)
+std::vector<unsigned int> Lattice::get_wtd_2x2()
 {
-        if(this->m_number_of_tracers_2x2 == 0)
+        std::vector<unsigned int> tmp_wtd(4+16*(this->m_wtd_max*this->m_wtd_res+1),0);
+        for(Tracer * tr : this->m_tracers_2x2)
         {
-                std::vector<double> tmp_stepping_rate_distribution = {0};
-                return tmp_stepping_rate_distribution;
+                if(tr->get_last_step_wtd_idx())
+                {
+                        tmp_wtd[tr->get_last_step_wtd_idx()]++;
+                }
         }
-        std::vector<double> tmp_stepping_rates = this->get_stepping_rates_2x2();
-        std::vector<double> tmp_stepping_rate_distribution(tmp_n_bins,0.0);
-        for(double tmp_r : tmp_stepping_rates)
-        {
-                tmp_stepping_rate_distribution[std::ceil(tmp_r * (double)tmp_n_bins)]++;
-        }
-        for(double & tmp_d : tmp_stepping_rate_distribution)
-        {
-                tmp_d /= this->m_number_of_tracers_2x2;
-        }
-        return tmp_stepping_rate_distribution;
+        return tmp_wtd;
 }
-// - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Lattice::get_stepping_rate_distribution_3x3(int tmp_n_bins)
+std::vector<unsigned int> Lattice::get_wtd_3x3()
 {
-        if(this->m_number_of_tracers_3x3 == 0)
+        std::vector<unsigned int> tmp_wtd(4+16*(this->m_wtd_max*this->m_wtd_res+1),0);
+        for(Tracer * tr : this->m_tracers_3x3)
         {
-                std::vector<double> tmp_stepping_rate_distribution = {0};
-                return tmp_stepping_rate_distribution;
+                if(tr->get_last_step_wtd_idx())
+                {
+                        tmp_wtd[tr->get_last_step_wtd_idx()]++;
+                }
         }
-        std::vector<double> tmp_stepping_rates = this->get_stepping_rates_3x3();
-        std::vector<double> tmp_stepping_rate_distribution(tmp_n_bins,0.0);
-        for(double tmp_r : tmp_stepping_rates)
+        return tmp_wtd;
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+std::vector<unsigned int> Lattice::get_correlations_1x1()
+{
+        std::vector<unsigned int> tmp_correlations(341,0);
+        for(Tracer * tr : this->m_tracers_1x1)
         {
-                tmp_stepping_rate_distribution[std::ceil(tmp_r * (double)tmp_n_bins)]++;
+                if(tr->get_last_step())
+                {
+                        for(int idx : tr->get_last_step_idx()) { tmp_correlations[idx]++; }
+                }
         }
-        for(double & tmp_d : tmp_stepping_rate_distribution)
+        return tmp_correlations;
+}
+std::vector<unsigned int> Lattice::get_correlations_2x2()
+{
+        std::vector<unsigned int> tmp_correlations(341,0);
+        for(Tracer * tr : this->m_tracers_2x2)
         {
-                tmp_d /= this->m_number_of_tracers_3x3;
+                if(tr->get_last_step())
+                {
+                        for(int idx : tr->get_last_step_idx()) { tmp_correlations[idx]++; }
+                }
         }
-        return tmp_stepping_rate_distribution;
+        return tmp_correlations;
+}
+std::vector<unsigned int> Lattice::get_correlations_3x3()
+{
+        std::vector<unsigned int> tmp_correlations(341,0);
+        for(Tracer * tr : this->m_tracers_3x3)
+        {
+                if(tr->get_last_step())
+                {
+                        for(int idx : tr->get_last_step_idx()) { tmp_correlations[idx]++; }
+                }
+        }
+        return tmp_correlations;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<double> Lattice::get_avg_rate_correlations_1x1()
@@ -638,6 +616,11 @@ std::vector<double> Lattice::get_avg_rate_correlations_3x3()
 // - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> Lattice::get_wtd_1x1()
 {
+        std::vector<unsigned int> tmp_wtd_1x1 {,0};
+        for(Tracer * tr : this->m_tracers_1x1)
+        {
+
+        }
         return this->m_wtd_1x1;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
