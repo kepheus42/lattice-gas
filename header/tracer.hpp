@@ -75,6 +75,10 @@ std::vector<int> m_last_step_dir;
 std::vector<int> m_last_step_idx;
 // This vector of length m_last_step_dir.size() contains the indices of the last 1-N-step sequences
 // = = = = = = = = = = = = =
+int m_last_step_wtd_idx;
+int m_wtd_max;
+int m_wtd_res;
+// = = = = = = = = = = = = =
 double m_time_of_last_step;
 double m_time_since_last_step;
 // time when the last move took place, and time elapsed since then

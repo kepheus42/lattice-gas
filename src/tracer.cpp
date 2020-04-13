@@ -3,7 +3,7 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // C O N S T R U C T O R
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double step_rate) :
+Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double step_rate, int wtd_max, int wtd_res) :
         m_id(id),
         m_size(1),
         m_x(x),
