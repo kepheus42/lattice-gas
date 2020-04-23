@@ -52,29 +52,6 @@ std::vector<Tracer *> get_tracers_3x3();
 std::vector<int> get_tracer_positions();
 std::vector<int> get_occupation_map();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-double get_avg_rate_1x1();
-double get_avg_rate_2x2();
-double get_avg_rate_3x3();
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-double get_avg_lsquared_1x1();
-double get_avg_lsquared_2x2();
-double get_avg_lsquared_3x3();
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<unsigned int> get_wtd_1x1();
-std::vector<unsigned int> get_wtd_2x2();
-std::vector<unsigned int> get_wtd_3x3();
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<unsigned int> get_correlations_1x1();
-std::vector<unsigned int> get_correlations_2x2();
-std::vector<unsigned int> get_correlations_3x3();
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> get_avg_rate_correlations_1x1();
-std::vector<double> get_avg_rate_correlations_2x2();
-std::vector<double> get_avg_rate_correlations_3x3();
-// - - - - - - - - - - - - - - - - - - - - - - - - -
 // Debugging
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void print_occupation_map();

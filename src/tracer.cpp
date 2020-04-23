@@ -325,53 +325,6 @@ int Tracer::get_steps_taken()
         return this->m_steps_taken;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Tracer::get_relative_two_step_correlation()
-{
-        if(this->m_steps_taken < 2)
-        {
-                std::vector<double> tmp_vec(4,0);
-                return tmp_vec;
-        }
-        std::vector<double> tmp_vec;
-        tmp_vec.reserve(4);
-        for(int n : this->m_two_step_correlation)
-        {
-                tmp_vec.push_back((double)n/(double)(this->m_steps_taken - 1));
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Tracer::get_relative_three_step_correlation()
-{
-        if(this->m_steps_taken < 3)
-        {
-                std::vector<double> tmp_vec(16,0);
-                return tmp_vec;
-        }
-        std::vector<double> tmp_vec;
-        tmp_vec.reserve(16);
-        for(int n : this->m_three_step_correlation)
-        {
-                tmp_vec.push_back((double)n/(double)(this->m_steps_taken - 2));
-        }
-        return tmp_vec;
-}// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Tracer::get_relative_four_step_correlation()
-{
-        if(this->m_steps_taken < 4)
-        {
-                std::vector<double> tmp_vec(64,0);
-                return tmp_vec;
-        }
-        std::vector<double> tmp_vec;
-        tmp_vec.reserve(64);
-        for(int n : this->m_four_step_correlation)
-        {
-                tmp_vec.push_back((double)n/(double)(this->m_steps_taken - 3));
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
 // change mobility state (e.g. by trapping mechanism)
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer::stuck()

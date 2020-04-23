@@ -89,37 +89,37 @@ inline void Wrapper::update_data(){
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 double Wrapper::get_avg_rate_1x1(){
-        double tmp_sum_steps_taken = 0;
+        unsigned long tmp_sum = 0;
         for(Lattice * l : this->m_lattices)
         {
                 for(Tracer * tr : l->get_tracers_1x1())
                 {
-                        tmp_sum_steps_taken += (double)tr->get_last_step();
+                        if(tr->get_last_step()) { tmp_sum++; }
                 }
         }
-        return tmp_sum/this->m_this_number_of_tracers_1x1_times_number_of_lattices;
+        return (double)tmp_sum/this->m_this_number_of_tracers_1x1_times_number_of_lattices;
 }
 double Wrapper::get_avg_rate_2x2(){
-        double tmp_sum_steps_taken = 0;
+        unsigned long tmp_sum = 0;
         for(Lattice * l : this->m_lattices)
         {
                 for(Tracer * tr : l->get_tracers_2x2())
                 {
-                        tmp_sum_steps_taken += (double)tr->get_last_step();
+                        if(tr->get_last_step()) { tmp_sum++; }
                 }
         }
-        return tmp_sum/this->m_this_number_of_tracers_2x2_times_number_of_lattices;
+        return (double)tmp_sum/this->m_this_number_of_tracers_2x2_times_number_of_lattices;
 }
 double Wrapper::get_avg_rate_3x3(){
-        double tmp_sum_steps_taken = 0;
+        unsigned long tmp_sum = 0;
         for(Lattice * l : this->m_lattices)
         {
                 for(Tracer * tr : l->get_tracers_3x3())
                 {
-                        tmp_sum_steps_taken += (double)tr->get_last_step();
+                        if(tr->get_last_step()) { tmp_sum++; }
                 }
         }
-        return tmp_sum/this->m_this_number_of_tracers_3x3_times_number_of_lattices;
+        return (double)tmp_sum/this->m_this_number_of_tracers_3x3_times_number_of_lattices;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 double Wrapper::get_avg_lsquared_1x1(){
@@ -220,350 +220,6 @@ void Wrapper::update_correlations_3x3(){
         }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<int> Wrapper::get_wtd_1x1()
-{
-        if(this->m_number_of_tracers_1x1 == 0)
-        {
-                std::vector<int> tmp_wtd = {0};
-                return tmp_wtd;
-        }
-        std::vector<int> tmp_wtd;
-        std::vector<int> tmp_current_wtd;
-        tmp_wtd.reserve(4*(this->m_wtd_max+1));
-        tmp_current_wtd.reserve(4*(this->m_wtd_max+1));
-
-        for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-        {
-                tmp_wtd.push_back(0);
-        }
-        for(Lattice * l : this->m_lattices)
-        {
-                tmp_current_wtd = l->get_wtd_1x1();
-                for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-                {
-                        tmp_wtd[n] += tmp_current_wtd[n];
-                }
-
-        }
-        return tmp_wtd;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<int> Wrapper::get_wtd_2x2()
-{
-        if(this->m_number_of_tracers_2x2 == 0)
-        {
-                std::vector<int> tmp_wtd = {0};
-                return tmp_wtd;
-        }
-        std::vector<int> tmp_wtd;
-        std::vector<int> tmp_current_wtd;
-        tmp_wtd.reserve(4*(this->m_wtd_max+1));
-        tmp_current_wtd.reserve(4*(this->m_wtd_max+1));
-
-        for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-        {
-                tmp_wtd.push_back(0);
-        }
-        tmp_wtd.reserve((this->m_wtd_max+1));
-        for(Lattice * l : this->m_lattices)
-        {
-                tmp_current_wtd = l->get_wtd_2x2();
-                for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-                {
-                        tmp_wtd[n] += tmp_current_wtd[n];
-                }
-        }
-        return tmp_wtd;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<int> Wrapper::get_wtd_3x3()
-{
-        if(this->m_number_of_tracers_3x3 == 0)
-        {
-                std::vector<int> tmp_wtd = {0};
-                return tmp_wtd;
-        }
-        std::vector<int> tmp_wtd;
-        std::vector<int> tmp_current_wtd;
-        tmp_wtd.reserve(4*(this->m_wtd_max+1));
-        tmp_current_wtd.reserve(4*(this->m_wtd_max+1));
-
-        for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-        {
-                tmp_wtd.push_back(0);
-        }
-        for(Lattice * l : this->m_lattices)
-        {
-                tmp_current_wtd = l->get_wtd_3x3();
-                for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-                {
-                        tmp_wtd[n] += tmp_current_wtd[n];
-                }
-        }
-        return tmp_wtd;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_norm_wtd_1x1()
-{
-        if(this->m_number_of_tracers_1x1 == 0)
-        {
-                std::vector<double> tmp_wtd = {0};
-                return tmp_wtd;
-        }
-        std::vector<double> tmp_wtd;
-        std::vector<double> tmp_current_wtd;
-        tmp_current_wtd.reserve(4*(this->m_wtd_max+1));
-        tmp_wtd.reserve(4*(this->m_wtd_max+1));
-        for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-        {
-                tmp_wtd.push_back(0);
-        }
-        for(Lattice * l : this->m_lattices)
-        {
-                tmp_current_wtd = l->get_norm_wtd_1x1();
-                for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-                {
-                        tmp_wtd[n] += (double)tmp_current_wtd[n];
-                }
-        }
-        for(double & d : tmp_wtd)
-        {
-                d /= this->m_number_of_lattices;
-        }
-        return tmp_wtd;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_norm_wtd_2x2()
-{
-        if(this->m_number_of_tracers_2x2 == 0)
-        {
-                std::vector<double> tmp_wtd = {0};
-                return tmp_wtd;
-        }
-        std::vector<double> tmp_wtd;
-        std::vector<double> tmp_current_wtd;
-        tmp_current_wtd.reserve(4*(this->m_wtd_max+1));
-        tmp_wtd.reserve(4*(this->m_wtd_max+1));
-        for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-        {
-                tmp_wtd.push_back(0);
-        }
-        for(Lattice * l : this->m_lattices)
-        {
-                tmp_current_wtd = l->get_norm_wtd_2x2();
-                for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-                {
-                        tmp_wtd[n] += (double)tmp_current_wtd[n];
-                }
-        }
-        for(double & d : tmp_wtd)
-        {
-                d /= this->m_number_of_lattices;
-        }
-        return tmp_wtd;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_norm_wtd_3x3()
-{
-        if(this->m_number_of_tracers_3x3 == 0)
-        {
-                std::vector<double> tmp_wtd = {0};
-                return tmp_wtd;
-        }
-        std::vector<double> tmp_wtd;
-        std::vector<double> tmp_current_wtd;
-        tmp_current_wtd.reserve(4*(this->m_wtd_max+1));
-        tmp_wtd.reserve(4*(this->m_wtd_max+1));
-        for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-        {
-                tmp_wtd.push_back(0);
-        }
-        for(Lattice * l : this->m_lattices)
-        {
-                tmp_current_wtd = l->get_norm_wtd_3x3();
-                for(int n = 0; n < 4*(this->m_wtd_max+1); n++)
-                {
-                        tmp_wtd[n] += (double)tmp_current_wtd[n];
-                }
-        }
-        for(double & d : tmp_wtd)
-        {
-                d /= this->m_number_of_lattices;
-        }
-        return tmp_wtd;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_two_step_correlation_1x1()
-{
-        std::vector<double> tmp_vec(4,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_two_step_correlation_1x1())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_two_step_correlation_2x2()
-{
-        std::vector<double> tmp_vec(4,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_two_step_correlation_2x2())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_two_step_correlation_3x3()
-{
-        std::vector<double> tmp_vec(4,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_two_step_correlation_3x3())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// average three step correlations (sums of the directional three step waiting time distributions)
-std::vector<double> Wrapper::get_avg_three_step_correlation_1x1()
-{
-        std::vector<double> tmp_vec(16,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_three_step_correlation_1x1())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_three_step_correlation_2x2()
-{
-        std::vector<double> tmp_vec(16,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_three_step_correlation_2x2())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_three_step_correlation_3x3()
-{
-        std::vector<double> tmp_vec(16,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_three_step_correlation_3x3())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_four_step_correlation_1x1()
-{
-        std::vector<double> tmp_vec(64,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_four_step_correlation_1x1())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_four_step_correlation_2x2()
-{
-        std::vector<double> tmp_vec(64,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_four_step_correlation_2x2())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<double> Wrapper::get_avg_four_step_correlation_3x3()
-{
-        std::vector<double> tmp_vec(64,0);
-        for(Lattice * l : this->m_lattices)
-        {
-                int idx = 0;
-                for(double tmp_dbl : l->get_avg_four_step_correlation_3x3())
-                {
-                        tmp_vec[idx] += tmp_dbl;
-                        idx++;
-                }
-        }
-        for(double & tmp_dbl : tmp_vec)
-        {
-                tmp_dbl /= this->m_number_of_lattices;
-        }
-        return tmp_vec;
-}
-// = = = = = = = = = = = = = = = = = = = = = = = = =
 // Get Simulation Results:
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 // avg_lsquared(t) for t = [0,...,m_number_of_timesteps]
@@ -596,41 +252,69 @@ std::vector<double> Wrapper::get_result_rate_3x3(){
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 // waiting time distributions for the 4 possible two-step configurations
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<double> get_result_wtd_1x1(){
-        return this->m_wtd_1x1;
-        // TODO: normalize the vector, such that the sum over all the wtds is 1.0
-        //std::vector<double> tmp_wtd; // (this->m_wtd_1x1.size(),0.0);
-        //tmp_wtd.reserve(this->m_wtd_1x1.size());
-        //int tmp_norm = std::accumulate(this->m_wtd_1x1.begin(), this->m_wtd_1x1.end(), 0);
-        //std::transform(this->m_wtd_1x1.begin(), this->m_wtd_1x1.end(), std::back_inserter(tmp_wtd), );
-        //return tmp_wtd;
+std::vector<unsigned long> get_result_wtd_1x1(){
+        std::vector<unsigned long> tmp_wtd;
+        tmp_wtd.reserve(this->m_wtd_1x1.size()-1);
+        tmp_wtd.assign(this->m_wtd_1x1.first()+1,this->m_wtd_1x1.last());
+        return tmp_wtd;
+}
+std::vector<unsigned long> get_result_wtd_2x2(){
+        std::vector<unsigned long> tmp_wtd;
+        tmp_wtd.reserve(this->m_wtd_2x2.size()-1);
+        tmp_wtd.assign(this->m_wtd_2x2.first()+1,this->m_wtd_2x2.last());
+        return tmp_wtd;
+}
+std::vector<unsigned long> get_result_wtd_3x3(){
+        std::vector<unsigned long> tmp_wtd;
+        tmp_wtd.reserve(this->m_wtd_3x3.size()-1);
+        tmp_wtd.assign(this->m_wtd_3x3.first()+1,this->m_wtd_3x3.last());
+        return tmp_wtd;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<double> get_result_wtd_2x2(){
-        return this->m_wtd_2x2;
+std::vector<unsigned long> get_result_correlations_1x1(){
+        std::vector<unsigned long> tmp_corr;
+        tmp_corr.reserve(this->m_correlations_1x1.size()-1);
+        tmp_corr.assign(this->m_correlations_1x1.first()+1,this->m_correlations_1x1.last());
+        return tmp_corr;
+}
+std::vector<unsigned long> get_result_correlations_2x2(){
+        std::vector<unsigned long> tmp_corr;
+        tmp_corr.reserve(this->m_correlations_2x2.size()-1);
+        tmp_corr.assign(this->m_correlations_2x2.first()+1,this->m_correlations_2x2.last());
+        return tmp_corr;
+}
+std::vector<unsigned long> get_result_correlations_3x3(){
+        std::vector<unsigned long> tmp_corr;
+        tmp_corr.reserve(this->m_correlations_3x3.size()-1);
+        tmp_corr.assign(this->m_correlations_3x3.first()+1,this->m_correlations_3x3.last());
+        return tmp_corr;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<double> get_result_wtd_3x3(){
-        return this->m_wtd_3x3;
+// TODO: write functions to return the normalized [0.0-1.0], sum=1.0 version of the wtd
+std::vector<double> get_result_norm_wtd_1x1(){
+        std::vector<double> tmp_wtd(this->m_wtd_1x1.size()-1,0.0)
+        return tmp_wtd;
+}
+std::vector<double> get_result_norm_wtd_2x2(){
+        std::vector<double> tmp_wtd(this->m_wtd_2x2.size()-1,0.0)
+        return tmp_wtd;
+}
+std::vector<double> get_result_norm_wtd_3x3(){
+        std::vector<double> tmp_wtd(this->m_wtd_3x3.size()-1,0.0)
+        return tmp_wtd;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<double> get_result_correlations_1x1(){
-        return this->m_correlations_1x1;
-        //std::vector<double> tmp_correlations(this->m_correlations_1x1.size(),0.0);
-        //return tmp_correlations;
+// TODO: write functions to return the normalized [0.0-1.0], sum=1.0 version of the correlations
+// TODO: Note that this requires a different normalization constant per n-step correlation
+std::vector<double> get_result_norm_correlations_1x1(){
+        std::vector<double> tmp_corr(this->m_correlations_1x1.size()-1,0.0)
+        return tmp_corr;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<double> get_result_correlations_2x2(){
-        return this->m_correlations_2x2;
-
-        //std::vector<double> tmp_correlations(this->m_correlations_2x2.size(),0.0);
-        //return tmp_correlations;
+std::vector<double> get_result_norm_correlations_2x2(){
+        std::vector<double> tmp_corr(this->m_correlations_2x2.size()-1,0.0)
+        return tmp_corr;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
-std::vector<double> get_result_correlations_3x3(){
-        return this->m_correlations_3x3;
-
-        //std::vector<double> tmp_correlations(this->m_correlations_3x3.size(),0.0);
-        //return tmp_correlations;
+std::vector<double> get_result_norm_correlations_3x3(){
+        std::vector<double> tmp_corr(this->m_correlations_3x3.size()-1,0.0)
+        return tmp_corr;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
