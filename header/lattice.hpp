@@ -43,6 +43,11 @@ int get_tracer_size(int);
 int get_tracer_last_move(int);
 int get_tracer_position_x(int);
 int get_tracer_position_y(int);
+// - - - - - - - - - - - - - - -
+std::vector<Tracer *> get_tracers();
+std::vector<Tracer *> get_tracers_1x1();
+std::vector<Tracer *> get_tracers_2x2();
+std::vector<Tracer *> get_tracers_3x3();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> get_tracer_positions();
 std::vector<int> get_occupation_map();
@@ -95,6 +100,8 @@ int m_wtd_res;
 std::vector<int> m_movement_selector;
 int m_movement_selector_length;
 int m_step_attempts_per_timestep;
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+double m_t_increment;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // to keep track of the positions of all tracers
 std::vector<int> m_occupation_map;

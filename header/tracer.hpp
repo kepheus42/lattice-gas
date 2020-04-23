@@ -50,6 +50,11 @@ int get_steps_taken();
 // --- 1 if step taken during current timestep, 0 else
 bool get_last_step();
 //
+int get_wtd_idx();
+//
+std::vector<int> get_last_step_idx();
+//
+
 protected:
 // = = = = = = = = = = = = =
 int m_id;
@@ -78,6 +83,7 @@ std::vector<int> m_last_step_idx;
 int m_last_step_wtd_idx;
 int m_wtd_max;
 int m_wtd_res;
+int m_wtd_max_times_wtd_res;
 // = = = = = = = = = = = = =
 double m_time_of_last_step;
 double m_time_since_last_step;

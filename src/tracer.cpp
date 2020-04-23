@@ -17,6 +17,7 @@ Tracer::Tracer(int id, int x, int y, int grid_size_x, int grid_size_y, double st
         m_last_step_wtd_idx(0),
         m_wtd_max(wtd_max),
         m_wtd_res(wtd_res),
+        m_wtd_max_times_wtd_res(wtd_max*wtd_res),
         m_time_of_last_step(0),
         m_time_since_last_step(0),
         m_steps_taken(0),
@@ -43,7 +44,9 @@ inline void Tracer::update_last_step(int last_step_dir)
                 this->m_last_step_idx[tmp_n] = tmp_idx;
                 tmp_n++;
         }
-        this->m_last_step_wtd_idx = this->m_last_step_idx[1];
+        if(!this->m_last_step_idx[1]) { return; }
+        this->m_last_step_wtd_idx = min((int)(this->m_time_since_last_step*this->m_wtd_res),this->m_wtd_max_times_wtd_res)+this->m_last_step_idx[1]-4;
+        // = this->m_last_step_idx[1];
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // coordinate conversion x,y -> vector idx
@@ -297,6 +300,11 @@ bool Tracer::get_isstuck()
 bool Tracer::get_last_step()
 {
         return this->m_last_step;
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+int Tracer::get_wtd_idx()
+{
+        return this->m_last_step_wtd_idx;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> Tracer::get_last_step_dir(){

@@ -33,6 +33,7 @@ Lattice::Lattice(int grid_size_x,
         m_step_attempts_per_timestep((int)(this->m_number_of_tracers_1x1*this->m_step_rate_1x1)+
                                      (int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)+
                                      (int)(this->m_number_of_tracers_3x3*this->m_step_rate_3x3)),
+        m_t_increment(1.0/(double)this->m_step_attempts_per_timestep),
         m_occupation_map(grid_size_x*grid_size_y,0),
         m_wtd_max(wtd_max),
         m_wtd_res(wtd_res)
@@ -233,7 +234,6 @@ void Lattice::timestep(){
         int tmp_par; // which particle moves
         int tmp_dir; // which direction it moves in
         double tmp_time = (double)this->m_t;
-        double tmp_time_increment = 1.0/(double)this->m_step_attempts_per_timestep;
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
                 tmp_rnd = random_int(0,4*this->m_movement_selector_length);
@@ -241,7 +241,7 @@ void Lattice::timestep(){
                 tmp_dir = 1+tmp_rnd%4;
                 // eacth timestep consists of m_step_attempts_per_timestep equal intervals, thus the time at which a given step attempt takes place is t = m_t + n / m_step_attempts_per_timestep
                 this->m_tracers[tmp_par]->step(this->m_occupation_map,tmp_dir,tmp_time);
-                tmp_time += tmp_time_increment;
+                tmp_time += this->m_t_increment;
         }
         this->m_t++;
 }
@@ -265,14 +265,13 @@ void Lattice::timestep_no_interaction(){
         int tmp_par; // which particle moves
         int tmp_dir; // which direction it moves in
         double tmp_time = (double)this->m_t;
-        double tmp_time_increment = 1.0/(double)this->m_step_attempts_per_timestep;
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
                 tmp_rnd = random_int(0,4*this->m_movement_selector_length);
                 tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
                 tmp_dir = 1+tmp_rnd%4;
                 this->m_tracers[tmp_par]->unhindered_step(tmp_dir,tmp_time);
-                tmp_time += tmp_time_increment;
+                tmp_time += this->m_t_increment;
         }
         this->m_t++;
 }

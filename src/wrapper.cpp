@@ -72,22 +72,19 @@ int Wrapper::get_t()
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 inline void Wrapper::update_data(){
         if(this->m_number_of_tracers_1x1) {
-                this->m_avg_lsquared_1x1[this->m_t] = this->get_avg_lsquared_1x1();
                 this->m_avg_rate_1x1[this->m_t] = this->get_avg_rate_1x1();
+                this->m_avg_lsquared_1x1[this->m_t] = this->get_avg_lsquared_1x1();
                 this->update_correlations_1x1();
-                this->update_wtd_1x1();
         }
         if(this->m_number_of_tracers_2x2) {
-                this->m_avg_lsquared_2x2[this->m_t] = this->get_avg_lsquared_2x2();
                 this->m_avg_rate_2x2[this->m_t] = this->get_avg_rate_2x2();
+                this->m_avg_lsquared_2x2[this->m_t] = this->get_avg_lsquared_2x2();
                 this->update_correlations_2x2();
-                this->update_wtd_2x2();
         }
         if(this->m_number_of_tracers_3x3) {
-                this->m_avg_lsquared_3x3[this->m_t] = this->get_avg_lsquared_3x3();
                 this->m_avg_rate_3x3[this->m_t] = this->get_avg_rate_3x3();
+                this->m_avg_lsquared_3x3[this->m_t] = this->get_avg_lsquared_3x3();
                 this->update_correlations_3x3();
-                this->update_wtd_3x3();
         }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -159,76 +156,66 @@ double Wrapper::get_avg_lsquared_3x3(){
         return tmp_sum_lsquared/this->m_this_number_of_tracers_3x3_times_number_of_lattices;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
-void Wrapper::update_wtd_1x1(){
-        int tmp_idx;
-        for(Lattice * l : this->lattices)
-        {
-                tmp_idx = 0;
-                for(unsigned int * ui : l->get_wtd_1x1())
-                {
-                        this->m_wtd_1x1[tmp_idx] += ui;
-                        idx++;
-                }
-        }
-}
-void Wrapper::update_wtd_2x2(){
-        int tmp_idx;
-        for(Lattice * l : this->lattices)
-        {
-                tmp_idx = 0;
-                for(unsigned int * ui : l->get_wtd_2x2())
-                {
-                        this->m_wtd_2x2[tmp_idx] += ui;
-                        idx++;
-                }
-        }
-}
-void Wrapper::update_wtd_3x3(){
-        int tmp_idx;
-        for(Lattice * l : this->lattices)
-        {
-                tmp_idx = 0;
-                for(unsigned int * ui : l->get_wtd_3x3())
-                {
-                        this->m_wtd_3x3[tmp_idx] += ui;
-                        idx++;
-                }
-        }
-}
-// = = = = = = = = = = = = = = = = = = = = = = = = =
 void Wrapper::update_correlations_1x1(){
-        int tmp_idx;
+        // iterate over all lattices
         for(Lattice * l : this->lattices)
         {
-                tmp_idx = 0;
-                for(unsigned int * ui : l->get_correlations_1x1())
+                // iterate over all tracers (of type X) on current lattice
+                for(Tracer * tr : l->get_tracers_1x1())
                 {
-                        this->m_correlations_1x1[tmp_idx] += ui;
-                        idx++;
+                        // check if current tracer has a contribution to correlation in this timestep
+                        if(tr->get_last_step())
+                        {
+                                // update the 2-step waiting time distribution
+                                this->m_wtd_1x1[tr->get_wtd_index()]++;
+                                // count how often the different indexes occured
+                                for(int idx : tr->get_last_step_idx()) {
+                                        this->m_correlations_1x1[idx]++;
+                                }
+                        }
+
                 }
         }
 }
 void Wrapper::update_correlations_2x2(){
-        int tmp_idx;
+        // iterate over all lattices
         for(Lattice * l : this->lattices)
         {
-                tmp_idx = 0;
-                for(unsigned int * ui : l->get_correlations_2x2())
+                // iterate over all tracers (of type X) on current lattice
+                for(Tracer * tr : l->get_tracers_2x2())
                 {
-                        this->m_correlations_2x2[tmp_idx] += ui;
-                        idx++;
+                        // check if current tracer has a contribution to correlation in this timestep
+                        if(tr->get_last_step())
+                        {
+                                // update the 2-step waiting time distribution
+                                this->m_wtd_2x2[tr->get_wtd_index()]++;
+                                // count how often the different indexes occured
+                                for(int idx : tr->get_last_step_idx()) {
+                                        this->m_correlations_2x2[idx]++;
+                                }
+                        }
+
                 }
         }
 }
 void Wrapper::update_correlations_3x3(){
-        int tmp_idx;
+        // iterate over all lattices
         for(Lattice * l : this->lattices)
         {
-                tmp_idx = 0;
-                for(unsigned int * ui : l->get_correlations_3x3())
+                // iterate over all tracers (of type X) on current lattice
+                for(Tracer * tr : l->get_tracers_3x3())
                 {
-                        this->m_correlations_3x3[tmp_idx] += ui;
-                        idx++;
+                        // check if current tracer has a contribution to correlation in this timestep
+                        if(tr->get_last_step())
+                        {
+                                // update the 2-step waiting time distribution
+                                this->m_wtd_3x3[tr->get_wtd_index()]++;
+                                // count how often the different indexes occured
+                                for(int idx : tr->get_last_step_idx()) {
+                                        this->m_correlations_3x3[idx]++;
+                                }
+                        }
+
                 }
         }
 }
@@ -610,42 +597,40 @@ std::vector<double> Wrapper::get_result_rate_3x3(){
 // waiting time distributions for the 4 possible two-step configurations
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> get_result_wtd_1x1(){
+        return this->m_wtd_1x1;
+        // TODO: normalize the vector, such that the sum over all the wtds is 1.0
+        //std::vector<double> tmp_wtd; // (this->m_wtd_1x1.size(),0.0);
+        //tmp_wtd.reserve(this->m_wtd_1x1.size());
+        //int tmp_norm = std::accumulate(this->m_wtd_1x1.begin(), this->m_wtd_1x1.end(), 0);
+        //std::transform(this->m_wtd_1x1.begin(), this->m_wtd_1x1.end(), std::back_inserter(tmp_wtd), );
+        //return tmp_wtd;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> get_result_wtd_2x2(){
+        return this->m_wtd_2x2;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> get_result_wtd_3x3(){
+        return this->m_wtd_3x3;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> get_result_correlations_1x1(){
-
-        if(this->m_steps_taken < 2) { return; }
-        int tmp_last_moves = 10*this->m_last_moves[1]+this->m_last_moves[0];
-        int tmp_idx = std::min((tmp_last_moves%11),((tmp_last_moves+4)%11));
-        this->m_two_step_correlation[tmp_idx]++;
-
-        if(this->m_steps_taken < 3) { return; }
-        int tmp_last_moves_1 = 10*this->m_last_moves[2]+this->m_last_moves[1];
-        int tmp_last_moves_2 = 10*this->m_last_moves[1]+this->m_last_moves[0];
-        int tmp_idx_1 = std::min((tmp_last_moves_1%11),((tmp_last_moves_1+4)%11));
-        int tmp_idx_2 = std::min((tmp_last_moves_2%11),((tmp_last_moves_2+4)%11));
-        this->m_three_step_correlation[4*tmp_idx_1+tmp_idx_2]++;
-
-        if(this->m_steps_taken < 4) { return; }
-        int tmp_last_moves_0 = 10*this->m_last_moves[1]+this->m_last_moves[0];
-        int tmp_last_moves_1 = 10*this->m_last_moves[2]+this->m_last_moves[1];
-        int tmp_last_moves_2 = 10*this->m_last_moves[3]+this->m_last_moves[2];
-        int tmp_idx_0 = std::min((tmp_last_moves_0%11),((tmp_last_moves_0+4)%11));
-        int tmp_idx_1 = std::min((tmp_last_moves_1%11),((tmp_last_moves_1+4)%11));
-        int tmp_idx_2 = std::min((tmp_last_moves_2%11),((tmp_last_moves_2+4)%11));
-        this->m_four_step_correlation[16*tmp_idx_2+4*tmp_idx_1+tmp_idx_0]++;
-
+        return this->m_correlations_1x1;
+        //std::vector<double> tmp_correlations(this->m_correlations_1x1.size(),0.0);
+        //return tmp_correlations;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> get_result_correlations_2x2(){
+        return this->m_correlations_2x2;
+
+        //std::vector<double> tmp_correlations(this->m_correlations_2x2.size(),0.0);
+        //return tmp_correlations;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> get_result_correlations_3x3(){
+        return this->m_correlations_3x3;
+
+        //std::vector<double> tmp_correlations(this->m_correlations_3x3.size(),0.0);
+        //return tmp_correlations;
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =

@@ -3,6 +3,7 @@
 
 #include "lattice.hpp"
 #include <vector>
+#include <numeric>
 
 class Wrapper {
 public:
@@ -29,7 +30,7 @@ double get_avg_lsquared_1x1();
 double get_avg_lsquared_2x2();
 double get_avg_lsquared_3x3();
 // = = = = = = = = = = = = = = = = = = = = = = = =
-// compute updated correlations, by summing up correlations contributions from all lattices
+// compute updated correlations and 2-step wtds, by summing up correlations contributions from all lattices
 void update_correlations_1x1();
 void update_correlations_2x2();
 void update_correlations_3x3();
