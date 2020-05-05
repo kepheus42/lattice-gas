@@ -26,17 +26,18 @@ Lattice::Lattice(int grid_size_x,
         m_step_rate_1x1(number_of_tracers_1x1 > 0 ? step_rate_1x1 : 1.0),
         m_step_rate_2x2(number_of_tracers_2x2 > 0 ? step_rate_2x2 : 1.0),
         m_step_rate_3x3(number_of_tracers_3x3 > 0 ? step_rate_3x3 : 1.0),
-        m_movement_selector_list((int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2/this->m_step_rate_3x3)+
-                                 (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1/this->m_step_rate_3x3)+
-                                 (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2),0),
-        m_movement_selector_length(this->m_movement_selector_list.size()),
+        m_wtd_max(wtd_max),
+        m_wtd_res(wtd_res),
+        m_movement_selector((int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2/this->m_step_rate_3x3)+
+                            (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1/this->m_step_rate_3x3)+
+                            (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2),0),
+        m_movement_selector_length(this->m_movement_selector.size()),
         m_step_attempts_per_timestep((int)(this->m_number_of_tracers_1x1*this->m_step_rate_1x1)+
                                      (int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)+
                                      (int)(this->m_number_of_tracers_3x3*this->m_step_rate_3x3)),
         m_t_increment(1.0/(double)this->m_step_attempts_per_timestep),
-        m_occupation_map(grid_size_x*grid_size_y,0),
-        m_wtd_max(wtd_max),
-        m_wtd_res(wtd_res)
+        m_occupation_map(grid_size_x*grid_size_y,0)
+
 {
         // check if there's enough space on the grid to place the tracers
         if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2 + 9*number_of_tracers_3x3)
@@ -51,7 +52,7 @@ Lattice::Lattice(int grid_size_x,
         this->setup_tracers();
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-void setup_movement_selection_list()
+void Lattice::setup_movement_selection_list()
 {
         //
         // structure of the selection list vector:
@@ -74,17 +75,17 @@ void setup_movement_selection_list()
         int tmp_n3 = (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2);
         for(int n = 0; n < tmp_n3; n++)
         {
-                this->m_movement_selector_list[idx] = n/tmp_m3;
+                this->m_movement_selector[tmp_idx] = n/tmp_m3;
                 tmp_idx++;
         }
         for(int n = 0; n < tmp_n2; n++)
         {
-                this->m_movement_selector_list[idx] = tmp_idx_2x2 + n/tmp_m2;
+                this->m_movement_selector[tmp_idx] = tmp_idx_2x2 + n/tmp_m2;
                 tmp_idx++;
         }
         for(int n = 0; n < tmp_n1; n++)
         {
-                this->m_movement_selector_list[idx] =  tmp_idx_1x1 + n/tmp_m1;
+                this->m_movement_selector[tmp_idx] =  tmp_idx_1x1 + n/tmp_m1;
                 tmp_idx++;
         }
 }
@@ -101,12 +102,12 @@ void Lattice::setup_tracers()
         {
                 this->m_tracers_3x3.reserve(this->m_number_of_tracers_3x3);
                 std::vector<int> tmp_start_positions_3x3;
-                tmp_start_positions_3x3.reserve(grid_size_x/3 * grid_size_y/3);
+                tmp_start_positions_3x3.reserve(this->m_grid_size_x/3 * this->m_grid_size_y/3);
                 for (int y=0; y < this->m_grid_size_y; y+=3)
                 {
                         for (int x=0; x < this->m_grid_size_x; x+=3)
                         {
-                                tmp_start_positions_3x3.push_back(x * grid_size_y + y);
+                                tmp_start_positions_3x3.push_back(x * this->m_grid_size_y + y);
                         }
                 }
                 // create the 3x3 tracers:
@@ -115,7 +116,7 @@ void Lattice::setup_tracers()
                 {
                         tmp_y = tmp_start_positions_3x3[n] % this->m_grid_size_y;
                         tmp_x = (tmp_start_positions_3x3[n] - tmp_y)/this->m_grid_size_y;
-                        this->m_tracers.push_back(new Tracer_3x3(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_3x3));
+                        this->m_tracers.push_back(new Tracer_3x3(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_3x3,this->m_wtd_max,this->m_wtd_res,this->m_step_attempts_per_timestep));
                         this->m_tracers_3x3.push_back(this->m_tracers.back());
                         this->m_occupation_map[this->coord(tmp_x+0,tmp_y+0)] = tmp_id;
                         this->m_occupation_map[this->coord(tmp_x+1,tmp_y+0)] = tmp_id;
@@ -145,11 +146,11 @@ void Lattice::setup_tracers()
                 }
                 // create the 2x2 tracers:
                 shuffle_vector(tmp_start_positions_2x2);
-                for (int n = 0; n < number_of_tracers_2x2; n++)
+                for (int n = 0; n < this->m_number_of_tracers_2x2; n++)
                 {
                         tmp_y = tmp_start_positions_2x2[n] % this->m_grid_size_y;
                         tmp_x = (tmp_start_positions_2x2[n] - tmp_y)/this->m_grid_size_y;
-                        this->m_tracers.push_back(new Tracer_2x2(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_2x2));
+                        this->m_tracers.push_back(new Tracer_2x2(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_2x2,this->m_wtd_max,this->m_wtd_res,this->m_step_attempts_per_timestep));
                         this->m_tracers_2x2.push_back(this->m_tracers.back());
                         this->m_occupation_map[this->coord(tmp_x+0,tmp_y+0)] = tmp_id;
                         this->m_occupation_map[this->coord(tmp_x+1,tmp_y+0)] = tmp_id;
@@ -176,44 +177,10 @@ void Lattice::setup_tracers()
                 {
                         tmp_y = tmp_start_positions_1x1[n] % this->m_grid_size_y;
                         tmp_x = (tmp_start_positions_1x1[n] - tmp_y)/this->m_grid_size_y;
-                        this->m_tracers.push_back(new Tracer(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_1x1));
+                        this->m_tracers.push_back(new Tracer(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_1x1,this->m_wtd_max,this->m_wtd_res,this->m_step_attempts_per_timestep));
                         this->m_tracers_1x1.push_back(this->m_tracers.back());
                         this->m_occupation_map[this->coord(tmp_x,tmp_y)] = tmp_id;
                         tmp_id++;
-                }
-        }
-}
-// - - - - - - - - - - - - - - - - - - - - - - - -
-void Lattice::update_wtd()
-{
-        for(Tracer * tr : this->m_tracers_1x1)
-        {
-                int idx = tr->get_wtd_index();
-                if(idx > 4*this->m_wtd_max) {
-                        idx = (idx-1)%4+4*this->m_wtd_max+1;
-                }
-                if(idx != 0) {
-                        this->m_wtd_1x1[idx-1]++;
-                }
-        }
-        for(Tracer * tr : this->m_tracers_2x2)
-        {
-                int idx = tr->get_wtd_index();
-                if(idx > 4*this->m_wtd_max) {
-                        idx = (idx-1)%4+4*this->m_wtd_max+1;
-                }
-                if(idx != 0) {
-                        this->m_wtd_2x2[idx-1]++;
-                }
-        }
-        for(Tracer * tr : this->m_tracers_3x3)
-        {
-                int idx = tr->get_wtd_index();
-                if(idx > 4*this->m_wtd_max) {
-                        idx = (idx-1)%4+4*this->m_wtd_max+1;
-                }
-                if(idx != 0) {
-                        this->m_wtd_3x3[idx-1]++;
                 }
         }
 }
@@ -226,22 +193,21 @@ inline int Lattice::coord(int x, int y){
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 void Lattice::warm_up(){
-        bool tmp_do_nothing = true;
+        return;
 }
 //
 void Lattice::timestep(){
         int tmp_rnd; // random number between 0 and 4*length of selector list
         int tmp_par; // which particle moves
         int tmp_dir; // which direction it moves in
-        double tmp_time = (double)this->m_t;
-        for (int n=0; n < this->m_step_attempts_per_timestep; n++)
+        long tmp_time = this->m_t * this->m_step_attempts_per_timestep;
+        for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                tmp_rnd = random_int(0,4*this->m_movement_selector_length);
-                tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
+                tmp_rnd = random_int(0,4*this->m_movement_selector_length-1);
+                tmp_par = this->m_movement_selector[tmp_rnd/4];
                 tmp_dir = 1+tmp_rnd%4;
                 // eacth timestep consists of m_step_attempts_per_timestep equal intervals, thus the time at which a given step attempt takes place is t = m_t + n / m_step_attempts_per_timestep
-                this->m_tracers[tmp_par]->step(this->m_occupation_map,tmp_dir,tmp_time);
-                tmp_time += this->m_t_increment;
+                this->m_tracers[tmp_par]->step(this->m_occupation_map,tmp_dir,tmp_time+n);
         }
         this->m_t++;
 }
@@ -250,28 +216,26 @@ void Lattice::timestep_warmup(){
         int tmp_rnd; // random number between 0 and 4*length of selector list
         int tmp_par; // which particle moves
         int tmp_dir; // which direction it moves in
-        for (int n=0; n < this->m_step_attempts_per_timestep; n++)
+        for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                tmp_rnd = random_int(0,4*this->m_movement_selector_length);
-                tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
+                tmp_rnd = random_int(0,4*this->m_movement_selector_length-1);
+                tmp_par = this->m_movement_selector[tmp_rnd/4];
                 tmp_dir = 1+tmp_rnd%4;
                 this->m_tracers[tmp_par]->step_warmup(this->m_occupation_map,tmp_dir);
         }
-        this->m_t++;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 void Lattice::timestep_no_interaction(){
         int tmp_rnd; // random number between 0 and 4*length of selector list
         int tmp_par; // which particle moves
         int tmp_dir; // which direction it moves in
-        double tmp_time = (double)this->m_t;
-        for (int n=0; n < this->m_step_attempts_per_timestep; n++)
+        long tmp_time = this->m_t * this->m_step_attempts_per_timestep;
+        for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
                 tmp_rnd = random_int(0,4*this->m_movement_selector_length);
-                tmp_par = this->m_movement_selector[std::floor(tmp_rnd/4)];
+                tmp_par = this->m_movement_selector[tmp_rnd/4];
                 tmp_dir = 1+tmp_rnd%4;
-                this->m_tracers[tmp_par]->unhindered_step(tmp_dir,tmp_time);
-                tmp_time += this->m_t_increment;
+                this->m_tracers[tmp_par]->step_unhindered(tmp_dir,tmp_time+n);
         }
         this->m_t++;
 }
@@ -311,11 +275,6 @@ int Lattice::get_grid_size_y()
 int Lattice::get_tracer_size(int id)
 {
         return this->m_tracers[id]->get_size();
-}
-// get the last move of a tracer (0,1,2,3,4)
-int Lattice::get_tracer_last_move(int id)
-{
-        return this->m_tracers[id]->get_last_move();
 }
 // get dx or dy of a tracer
 int Lattice::get_tracer_position_x(int id)

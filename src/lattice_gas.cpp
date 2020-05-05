@@ -10,8 +10,18 @@
 #include <boost/format.hpp>
 #include <string>
 
+// Debugging code
+#ifdef DEBUG
+#define D(x) (x)
+#else
+#define D(x) do {} while(0)
+#endif
+// To add debugging messages, use D(std::cerr << "Debugging message 1 2 3!" << std::endl; )
+
+
 int main(int ac, char** av){
         set_rng_seed(0);
+        printf("START!\n");
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // A L L  I N P U T  V A R I A B L E S
         // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -24,127 +34,108 @@ int main(int ac, char** av){
         int number_of_tracers_2x2 = atoi(av[6]);
         int number_of_tracers_3x3 = 0; //atoi(av[5]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int max_wtd = 100;
+        int wtd_max = atoi(av[7]);
+        int wtd_res = atoi(av[8]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         double step_rate_1x1 = 1;
         double step_rate_2x2 = 1/2;
         double step_rate_3x3 = 1/3; // atof(av[11]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_lattices = atoi(av[7]);
+        int number_of_lattices = atoi(av[9]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        printf("X:%4d Y:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d",grid_size_x,grid_size_y,number_of_tracers_1x1,number_of_tracers_2x2,number_of_timesteps,number_of_timesteps_warmup,number_of_lattices);
+        printf("X:%4d Y:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d\n",grid_size_x,grid_size_y,number_of_tracers_1x1,number_of_tracers_2x2,number_of_timesteps,number_of_timesteps_warmup,number_of_lattices);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_avg_msd_1x1;
-        std::string output_file_name_avg_msd_2x2;
+        std::string output_file_name_msd_1x1;
+        std::string output_file_name_msd_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_avg_rate_1x1;
-        std::string output_file_name_avg_rate_2x2;
+        std::string output_file_name_rate_1x1;
+        std::string output_file_name_rate_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string output_file_name_wtd_1x1;
         std::string output_file_name_wtd_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_rate_dist_1x1;
-        std::string output_file_name_rate_dist_2x2;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_rates_1x1;
-        std::string output_file_name_rates_2x2;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_two_step_correlation_1x1;
-        std::string output_file_name_two_step_correlation_2x2;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_three_step_correlation_1x1;
-        std::string output_file_name_three_step_correlation_2x2;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        std::string output_file_name_four_step_correlation_1x1;
-        std::string output_file_name_four_step_correlation_2x2;
+        std::string output_file_name_corr_1x1;
+        std::string output_file_name_corr_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         output_file_name_base_string = "X_"+std::to_string(grid_size_x)+"_Y_"+std::to_string(grid_size_y)+"_N1_"+std::to_string(number_of_tracers_1x1)+"_N2_"+std::to_string(number_of_tracers_2x2)+"_N3_"+std::to_string(number_of_tracers_3x3)+"_T_"+std::to_string(number_of_timesteps)+"_W_"+std::to_string(number_of_timesteps_warmup)+".bin";
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_avg_msd_1x1 = "avg_msd_1x1_" + output_file_name_base_string;
-        output_file_name_avg_msd_2x2 = "avg_msd_2x2_" + output_file_name_base_string;
+        output_file_name_msd_1x1 = "msd_1x1_"+output_file_name_base_string;
+        output_file_name_msd_2x2 = "msd_2x2_"+output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_avg_rate = "avg_rate_1x1_" + output_file_name_base_string;
-        output_file_name_avg_rate = "avg_rate_2x2_" + output_file_name_base_string;
+        output_file_name_rate_1x1 = "rate_1x1_"+output_file_name_base_string;
+        output_file_name_rate_2x2 = "rate_2x2_"+output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_wtd_1x1 = "wtd_1x1_" + output_file_name_base_string;
-        output_file_name_wtd_2x2 = "wtd_2x2_" + output_file_name_base_string;
+        output_file_name_wtd_1x1 = "wtd_1x1_"+output_file_name_base_string;
+        output_file_name_wtd_2x2 = "wtd_2x2_"+output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_rate_dist_1x1 = "rate_dist_1x1_" + output_file_name_base_string;
-        output_file_name_rate_dist_2x2 = "rate_dist_2x2_" + output_file_name_base_string;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_rates_1x1 =  "rates_1x1_" + output_file_name_base_string;
-        output_file_name_rates_2x2 =  "rates_2x2_" + output_file_name_base_string;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_two_step_correlation_1x1 = "two_step_corr_1x1_" + output_file_name_base_string;
-        output_file_name_two_step_correlation_2x2 = "two_step_corr_2x2_" + output_file_name_base_string;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_three_step_correlation_1x1 = "three_step_corr_1x1_" + output_file_name_base_string;
-        output_file_name_three_step_correlation_2x2 = "three_step_corr_2x2_" + output_file_name_base_string;
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
-        output_file_name_four_step_correlation_1x1 = "four_step_corr_1x1_" + output_file_name_base_string;
-        output_file_name_four_step_correlation_2x2 = "four_step_corr_2x2_" + output_file_name_base_string;
+        output_file_name_corr_1x1 = "corr_1x1_"+output_file_name_base_string;
+        output_file_name_corr_2x2 = "corr_2x2_"+output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string header_string;
         header_string = "Hello!";
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // create a wrapper
+        D(std::cerr << "Creating Wrapper ..." << std::endl);
         Wrapper * wrapper = new Wrapper(number_of_lattices,
                                         grid_size_x,
                                         grid_size_y,
                                         number_of_timesteps,
+                                        number_of_timesteps_warmup,
                                         number_of_tracers_1x1,
                                         number_of_tracers_2x2,
                                         number_of_tracers_3x3,
                                         step_rate_1x1,
                                         step_rate_2x2,
                                         step_rate_3x3,
-                                        max_wtd);
+                                        wtd_max,
+                                        wtd_res);
+        D(std::cerr << "Done!" << std::endl);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // perform warm up if number_of_timesteps_warmup
+        D(std::cerr << "Starting Warmup ..." << std::endl);
         for(int t = 0; t < number_of_timesteps_warmup; t++) { wrapper->timestep_warmup(); }
+        D(std::cerr << "Done!" << std::endl);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // let the simulation run for number_of_timesteps iterations
-        int progress_percent = 0;
+        int progress = 0;
+        D(std::cerr << "Starting Simulation Run ..." << std::endl);
         for(int t = 0; t < number_of_timesteps; t++)
         {
-                if((int)(1000*t/number_of_timesteps) > progress_percent) {
-                        progress_percent = (double)(100*t)/(double)number_of_timesteps;
+                if(1000*t/number_of_timesteps > progress) {
+                        progress = 1000*t/number_of_timesteps;
+                        printf("\rProgress:%6.1f",(double)progress/10.0);
                         fflush(stdout);
-                        printf("RUN:%f4.1", progress_percent);
                 }
                 wrapper->timestep();
         }
-        printf("RUN:%f4.1", progress_percent);
+        D(std::cerr << "Done!" << std::endl);
+        //printf("RUN:%f4.1\n", (double)progress_percent/10.0);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         if(number_of_tracers_1x1)
         {
-                vector_to_file(wrapper->get_avg_msd_1x1(),
-                               output_file_name_avg_msd_1x1);
-                vector_to_file(wrapper->get_avg_stepping_rate_1x1(),
-                               output_file_name_avg_rate_1x1);
-                vector_to_file(wrapper->get_avg_two_step_correlation_1x1(),
-                               output_file_name_two_step_correlation_1x1);
-                vector_to_file(wrapper->get_avg_three_step_correlation_1x1(),
-                               output_file_name_three_step_correlation_1x1);
-                vector_to_file(wrapper->get_avg_four_step_correlation_1x1(),
-                               output_file_name_four_step_correlation_1x1);
+                vector_to_file(wrapper->get_result_lsquared_1x1(),
+                               output_file_name_msd_1x1);
+                vector_to_file(wrapper->get_result_rate_1x1(),
+                               output_file_name_rate_1x1);
+                vector_to_file(wrapper->get_result_wtd_1x1(),
+                               output_file_name_wtd_1x1);
+                vector_to_file(wrapper->get_result_correlations_1x1(),
+                               output_file_name_corr_1x1);
         }
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         if(number_of_tracers_2x2)
         {
-                vector_to_file(wrapper->get_avg_msd_2x2(),
-                               output_file_name_avg_msd_2x2);
-                vector_to_file(wrapper->get_avg_stepping_rate_2x2(),
-                               output_file_name_avg_rate_2x2);
-                vector_to_file(wrapper->get_avg_two_step_correlation_2x2(),
-                               output_file_name_two_step_correlation_2x2);
-                vector_to_file(wrapper->get_avg_three_step_correlation_2x2(),
-                               output_file_name_three_step_correlation_2x2);
-                vector_to_file(wrapper->get_avg_four_step_correlation_2x2(),
-                               output_file_name_four_step_correlation_2x2);
+                vector_to_file(wrapper->get_result_lsquared_2x2(),
+                               output_file_name_msd_2x2);
+                vector_to_file(wrapper->get_result_rate_2x2(),
+                               output_file_name_rate_2x2);
+                vector_to_file(wrapper->get_result_wtd_2x2(),
+                               output_file_name_wtd_2x2);
+                vector_to_file(wrapper->get_result_correlations_2x2(),
+                               output_file_name_corr_2x2);
         }
-        std::cout << "DONE!" << std::endl;
+        printf("\rProgress:  DONE\n");
         // - - - - - - - - - - - - - - - - - - - - - - - - -
 }

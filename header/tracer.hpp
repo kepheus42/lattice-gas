@@ -10,13 +10,13 @@
 class Tracer {
 public:
 // constructor (x,y,grid_size_x,grid_size_y)
-Tracer(int,int,int,int,int,double);
+Tracer(int,int,int,int,int,double,int,int,int);
 // logic to move the tracer on the 2d lattice
 // different versions of these functions are required for the larger square tracers (2x2 and 3x3), therefore virtual
-virtual void step(std::vector<int> &, int, double);
+virtual void step(std::vector<int> &, int, long);
 virtual void step_warmup(std::vector<int> &, int);
 // this one is the same for all types, therefore not virtual
-void step_unhindered(int, double);
+void step_unhindered(int, long);
 //
 inline void update_last_step(int);
 //
@@ -41,8 +41,6 @@ int get_size();
 double get_lsquared();
 // --- stuck or not stuck ---
 bool get_isstuck();
-// --- last move (0,1,2,3,4) of the tracer ---
-int get_last_move();
 // --- time since last move
 double get_time_since_last_move();
 // --- total number of steps taken
@@ -83,10 +81,11 @@ std::vector<int> m_last_step_idx;
 int m_last_step_wtd_idx;
 int m_wtd_max;
 int m_wtd_res;
-int m_wtd_max_times_wtd_res;
+int m_wtd_max_index;
 // = = = = = = = = = = = = =
-double m_time_of_last_step;
-double m_time_since_last_step;
+long m_time_of_last_step;
+long m_time_since_last_step;
+int m_step_attempts_per_timestep;
 // time when the last move took place, and time elapsed since then
 // = = = = = = = = = = = = =
 int m_steps_taken;
@@ -106,16 +105,18 @@ bool m_isstuck;
 
 class Tracer_2x2 : public Tracer {
 public:
-Tracer_2x2(int,int,int,int,int,double);
-void step(std::vector<int> &, int, double);
+Tracer_2x2(int,int,int,int,int,double,int,int,int);
+void step(std::vector<int> &, int, long);
 void step_warmup(std::vector<int> &, int);
+void step_unhindered(int,long);
 };
 
 class Tracer_3x3 : public Tracer {
 public:
-Tracer_3x3(int,int,int,int,int,double);
-void step(std::vector<int> &, int, double);
+Tracer_3x3(int,int,int,int,int,double,int,int,int);
+void step(std::vector<int> &, int, long);
 void step_warmup(std::vector<int> &, int);
+void step_unhindered(int,long);
 };
 
 #endif
