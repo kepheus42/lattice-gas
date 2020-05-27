@@ -49,6 +49,18 @@ std::vector<Tracer *> get_tracers_1x1();
 std::vector<Tracer *> get_tracers_2x2();
 std::vector<Tracer *> get_tracers_3x3();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
+unsigned long get_sum_steps_taken_1x1();
+unsigned long get_sum_steps_taken_2x2();
+unsigned long get_sum_steps_taken_3x3();
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+double get_sum_lsqaured_1x1();
+double get_sum_lsquared_2x2();
+double get_sum_lsquared_3x3();
+// - - - - - - - - - - - - - - - - - - - - - - - - -
+std::vector<int> get_tracer_placement_1x1();
+std::vector<int> get_tracer_placement_2x2();
+std::vector<int> get_tracer_placement_3x3();
+// - - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> get_tracer_positions();
 std::vector<int> get_occupation_map();
 // - - - - - - - - - - - - - - - - - - - - - - - - -

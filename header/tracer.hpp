@@ -13,10 +13,10 @@ public:
 Tracer(int,int,int,int,int,double,int,int,int);
 // logic to move the tracer on the 2d lattice
 // different versions of these functions are required for the larger square tracers (2x2 and 3x3), therefore virtual
-virtual void step(std::vector<int> &, int, long);
+virtual void step(std::vector<int> &, int, int, int);
 virtual void step_warmup(std::vector<int> &, int);
 // this one is the same for all types, therefore not virtual
-void step_unhindered(int, long);
+void step_unhindered(int, int, int);
 //
 inline void update_last_step(int);
 //
@@ -83,7 +83,8 @@ int m_wtd_max;
 int m_wtd_res;
 int m_wtd_max_index;
 // = = = = = = = = = = = = =
-long m_time_of_last_step;
+int m_time_of_last_step;
+int m_last_step_attempt_number;
 long m_time_since_last_step;
 int m_step_attempts_per_timestep;
 // time when the last move took place, and time elapsed since then
@@ -106,17 +107,17 @@ bool m_isstuck;
 class Tracer_2x2 : public Tracer {
 public:
 Tracer_2x2(int,int,int,int,int,double,int,int,int);
-void step(std::vector<int> &, int, long);
+void step(std::vector<int> &, int, int, int);
 void step_warmup(std::vector<int> &, int);
-void step_unhindered(int,long);
+void step_unhindered(int,int,int);
 };
 
 class Tracer_3x3 : public Tracer {
 public:
 Tracer_3x3(int,int,int,int,int,double,int,int,int);
-void step(std::vector<int> &, int, long);
+void step(std::vector<int> &, int, int, int);
 void step_warmup(std::vector<int> &, int);
-void step_unhindered(int,long);
+void step_unhindered(int,int,int);
 };
 
 #endif

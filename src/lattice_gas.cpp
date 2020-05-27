@@ -38,8 +38,8 @@ int main(int ac, char** av){
         int wtd_res = atoi(av[8]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         double step_rate_1x1 = 1;
-        double step_rate_2x2 = 1/2;
-        double step_rate_3x3 = 1/3; // atof(av[11]);
+        double step_rate_2x2 = 1.0/2.0;
+        double step_rate_3x3 = 1.0/3.0; // atof(av[11]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int number_of_lattices = atoi(av[9]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -52,6 +52,9 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string output_file_name_rate_1x1;
         std::string output_file_name_rate_2x2;
+        // - - - - - - - - - - - - - - - - - - - - - - - - -
+        std::string output_file_name_sublattice_conc_1x1;
+        std::string output_file_name_sublattice_conc_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string output_file_name_wtd_1x1;
         std::string output_file_name_wtd_2x2;
@@ -66,6 +69,12 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         output_file_name_rate_1x1 = "rate_1x1_"+output_file_name_base_string;
         output_file_name_rate_2x2 = "rate_2x2_"+output_file_name_base_string;
+        // - - - - - - - - - - - - - - - - - - - - - - - - -
+        output_file_name_sublattice_conc_1x1 = "sub_c_1x1_"+output_file_name_base_string;
+        output_file_name_sublattice_conc_2x2 = "sub_c_2x2_"+output_file_name_base_string;
+        // - - - - - - - - - - - - - - - - - - - - - - - - -
+        output_file_name_neighbor_count_1x1 = "";
+        output_file_name_neighbor_count_2x2 = "";
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         output_file_name_wtd_1x1 = "wtd_1x1_"+output_file_name_base_string;
         output_file_name_wtd_2x2 = "wtd_2x2_"+output_file_name_base_string;
@@ -119,6 +128,8 @@ int main(int ac, char** av){
                                output_file_name_msd_1x1);
                 vector_to_file(wrapper->get_result_rate_1x1(),
                                output_file_name_rate_1x1);
+                vector_to_file(wrapper->get_result_sublattice_conc_1x1(),
+                               output_file_name_sublattice_conc_1x1);
                 vector_to_file(wrapper->get_result_wtd_1x1(),
                                output_file_name_wtd_1x1);
                 vector_to_file(wrapper->get_result_correlations_1x1(),
@@ -131,11 +142,14 @@ int main(int ac, char** av){
                                output_file_name_msd_2x2);
                 vector_to_file(wrapper->get_result_rate_2x2(),
                                output_file_name_rate_2x2);
+                vector_to_file(wrapper->get_result_sublattice_conc_2x2(),
+                               output_file_name_sublattice_conc_2x2);
                 vector_to_file(wrapper->get_result_wtd_2x2(),
                                output_file_name_wtd_2x2);
                 vector_to_file(wrapper->get_result_correlations_2x2(),
                                output_file_name_corr_2x2);
         }
+        // for(double d : wrapper->get_result_sublattice_conc_2x2()) { std::cout << d << std::endl;}
         printf("\rProgress:  DONE\n");
         // - - - - - - - - - - - - - - - - - - - - - - - - -
 }

@@ -21,8 +21,8 @@ void vector_to_file(std::vector<unsigned long> vec, std::string fname){
 void vector_to_file(std::vector<double> vec, std::string fname){
         std::ofstream ofs;
         ofs.open(fname, std::ios::out | std::ios::binary);
-        for(double n : vec) {
-                ofs.write(reinterpret_cast<const char*>(&n), sizeof(n));
+        for(double d : vec) {
+                ofs.write(reinterpret_cast<const char*>(&d), sizeof(d));
         }
         ofs.close();
 }

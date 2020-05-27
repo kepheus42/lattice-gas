@@ -1,5 +1,15 @@
 #include "tracer.hpp"
 #include "global.hpp"
+
+
+// Debugging code
+#ifdef DEBUG
+#define D(x) (x)
+#else
+#define D(x) do {} while(0)
+#endif
+
+
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // C O N S T R U C T O R
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -58,7 +68,7 @@ inline int Tracer::coord(int x, int y){
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // function for random walk stepping
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, long current_time){
+void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, int current_time, int current_step_attempt_number){
         //
         this->m_last_step = false;
         if(this->m_isstuck) { return; }
@@ -74,8 +84,9 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, long curren
                         this->m_dx++;
                         new_site = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -96,8 +107,9 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, long curren
                         this->m_dy++;
                         new_site = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -118,8 +130,9 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, long curren
                         this->m_dx--;
                         new_site = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -140,8 +153,9 @@ void Tracer::step(std::vector<int> &grid_occupation_vector, int dir, long curren
                         this->m_dy--;
                         new_site = this->m_id;
                         // for waiting time distribution
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -214,7 +228,7 @@ void Tracer::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer::step_unhindered(int dir, long current_time){
+void Tracer::step_unhindered(int dir, int current_time, int current_step_attempt_number){
         // function for stepping without collisions/tracer-tracer interaction
         switch(dir) {
         case 1:
@@ -248,8 +262,9 @@ void Tracer::step_unhindered(int dir, long current_time){
         default: { return; }
         }
         // since all step attempts are successful, I can do this outside of the switch-case
-        this->m_time_since_last_step = current_time - this->m_time_of_last_step;
+        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
         this->m_time_of_last_step = current_time;
+        this->m_last_step_attempt_number = current_step_attempt_number;
         // last but not least, update lsq, last moves
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
         this->update_last_step(dir);
@@ -335,7 +350,8 @@ Tracer_2x2::Tracer_2x2(int id, int x, int y, int grid_size_x, int grid_size_y, d
         this->m_size = 4;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int dir, long current_time){
+void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int dir, int current_time, int current_step_attempt_number){
+        D(std::cout << "STEP 2X2" << std::endl);
         this->m_last_step = false;
         if(this->m_isstuck) {
                 return;
@@ -367,8 +383,9 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -393,8 +410,9 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -419,8 +437,9 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -445,8 +464,9 @@ void Tracer_2x2::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_1 = this->m_id;
                         new_site_2 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -545,7 +565,7 @@ void Tracer_2x2::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer_2x2::step_unhindered(int dir, long current_time){
+void Tracer_2x2::step_unhindered(int dir, int current_time, int current_step_attempt_number){
         // function for stepping without collisions/tracer-tracer interaction
         switch(dir) {
         case 1:
@@ -579,8 +599,9 @@ void Tracer_2x2::step_unhindered(int dir, long current_time){
         default: { return; }
         }
         // since all step attempts are successful, I can do this outside of the switch-case
-        this->m_time_since_last_step = current_time - this->m_time_of_last_step;
+        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
         this->m_time_of_last_step = current_time;
+        this->m_last_step_attempt_number = current_step_attempt_number;
         // last but not least, update lsq, last moves
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
         this->update_last_step(dir);
@@ -592,7 +613,7 @@ Tracer_3x3::Tracer_3x3(int id, int x, int y, int grid_size_x, int grid_size_y, d
         this->m_size = 9;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, long current_time){
+void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, int current_time, int current_step_attempt_number){
         this->m_last_step = false;
         if(this->m_isstuck) {
                 return;
@@ -631,8 +652,9 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -662,8 +684,9 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -693,8 +716,9 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -724,8 +748,9 @@ void Tracer_3x3::step(std::vector<int> &grid_occupation_vector, int dir, long cu
                         new_site_2 = this->m_id;
                         new_site_3 = this->m_id;
 
-                        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+                        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
                         this->m_time_of_last_step = current_time;
+                        this->m_last_step_attempt_number = current_step_attempt_number;
 
                         this->m_last_step = true;
                         this->m_steps_taken++;
@@ -846,7 +871,7 @@ void Tracer_3x3::step_warmup(std::vector<int> &grid_occupation_vector, int dir){
         }
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void Tracer_3x3::step_unhindered(int dir, long current_time){
+void Tracer_3x3::step_unhindered(int dir, int current_time, int current_step_attempt_number){
         // function for stepping without collisions/tracer-tracer interaction
         switch(dir) {
         case 1:
@@ -879,8 +904,11 @@ void Tracer_3x3::step_unhindered(int dir, long current_time){
         }
         default: { return; }
         }
-        this->m_time_since_last_step = current_time-this->m_time_of_last_step;
+
+        this->m_time_since_last_step = (current_time-this->m_time_of_last_step < this->m_wtd_max ? (current_time-this->m_time_of_last_step)*this->m_step_attempts_per_timestep + current_step_attempt_number - this->m_last_step_attempt_number : this->m_wtd_max);
         this->m_time_of_last_step = current_time;
+        this->m_last_step_attempt_number = current_step_attempt_number;
+
         this->m_last_step = true;
         this->m_steps_taken++;
         this->m_lsquared = pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
