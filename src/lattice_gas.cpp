@@ -18,7 +18,6 @@
 #endif
 // To add debugging messages, use D(std::cerr << "Debugging message 1 2 3!" << std::endl; )
 
-
 int main(int ac, char** av){
         set_rng_seed(0);
         printf("START!\n");
@@ -32,14 +31,12 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int number_of_tracers_1x1 = atoi(av[5]);
         int number_of_tracers_2x2 = atoi(av[6]);
-        int number_of_tracers_3x3 = 0; //atoi(av[5]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int wtd_max = atoi(av[7]);
         int wtd_res = atoi(av[8]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        double step_rate_1x1 = 1;
+        double step_rate_1x1 = 1.0;
         double step_rate_2x2 = 1.0/2.0;
-        double step_rate_3x3 = 1.0/3.0; // atof(av[11]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int number_of_lattices = atoi(av[9]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -

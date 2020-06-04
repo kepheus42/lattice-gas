@@ -7,11 +7,27 @@
 #include <ios>
 
 // without header string
-void vector_to_file(std::vector<int>, std::string);
-void vector_to_file(std::vector<unsigned long>, std::string);
-void vector_to_file(std::vector<double>, std::string);
+template <Typename T>
+void vector_to_file(std::vector<T> vec, std::string fname){
+        std::ofstream ofs;
+        ofs.open(fname, std::ios::out | std::ios::binary);
+        for(T n : vec) {
+                ofs.write(reinterpret_cast<const char*>(&n), sizeof(n));
+        }
+        ofs.close();
+}
+
 // with header string
-void vector_to_file(std::vector<int>, std::string, std::string);
-void vector_to_file(std::vector<double>, std::string, std::string);
+template <Typename T>
+void vector_to_file(std::vector<T> vec, std::string header, std::string fname){
+        std::ofstream ofs;
+        ofs.open(fname, std::ios::out | std::ios::binary);
+        // check for newline after header maybe?
+        // ofs.write(header);
+        for(T n : vec) {
+                ofs.write(reinterpret_cast<const char*>(&n), sizeof(T));
+        }
+        ofs.close();
+}
 
 #endif

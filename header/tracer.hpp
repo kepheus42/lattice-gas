@@ -6,23 +6,18 @@
 #include <iostream>
 #include <algorithm>
 #include "global.hpp"
+#include "lattice.hpp"
 
 class Tracer {
 public:
 // constructor (x,y,grid_size_x,grid_size_y)
 Tracer(int,int,int,int,int,double,int,int,int);
 // logic to move the tracer on the 2d lattice
-// different versions of these functions are required for the larger square tracers (2x2 and 3x3), therefore virtual
-virtual void step(std::vector<int> &, int, int, int);
-virtual void step_warmup(std::vector<int> &, int);
-// this one is the same for all types, therefore not virtual
-void step_unhindered(int, int, int);
+void step(int);
+void step_warmup(int);
+void step_unhindered(int);
 //
 inline void update_last_step(int);
-//
-inline int coord(int,int);
-
-void reset();
 // change mobility state of tracer
 void stuck();
 void unstuck();
@@ -45,6 +40,7 @@ bool get_isstuck();
 double get_time_since_last_move();
 // --- total number of steps taken
 int get_steps_taken();
+int get_step_attempt_result();
 // --- 1 if step taken during current timestep, 0 else
 bool get_last_step();
 //
@@ -57,6 +53,10 @@ protected:
 // = = = = = = = = = = = = =
 int m_id;
 // Integer assigned at creation
+Lattice * m_parent_lattice;
+// The lattice that the tracer lives on
+Site * m_site;
+// site that the tracer is currently sitting on
 int m_size;
 // size of the tracer in lattice sites
 // = = = = = = = = = = = = =
@@ -90,6 +90,7 @@ int m_step_attempts_per_timestep;
 // time when the last move took place, and time elapsed since then
 // = = = = = = = = = = = = =
 int m_steps_taken;
+int m_step_attempt_result;
 // Total number of steps taken, gives actual step rate when divided by number of timesteps.
 // = = = = = = = = = = = = =
 int m_grid_size_x;
@@ -107,17 +108,7 @@ bool m_isstuck;
 class Tracer_2x2 : public Tracer {
 public:
 Tracer_2x2(int,int,int,int,int,double,int,int,int);
-void step(std::vector<int> &, int, int, int);
-void step_warmup(std::vector<int> &, int);
-void step_unhindered(int,int,int);
 };
 
-class Tracer_3x3 : public Tracer {
-public:
-Tracer_3x3(int,int,int,int,int,double,int,int,int);
-void step(std::vector<int> &, int, int, int);
-void step_warmup(std::vector<int> &, int);
-void step_unhindered(int,int,int);
-};
 
 #endif
