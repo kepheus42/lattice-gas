@@ -28,9 +28,10 @@ Lattice::Lattice(int grid_size_x,
         m_step_rate_3x3(number_of_tracers_3x3 > 0 ? step_rate_3x3 : 1.0),
         m_wtd_max(wtd_max),
         m_wtd_res(wtd_res),
-        m_movement_selector((int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2/this->m_step_rate_3x3)+
-                            (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1/this->m_step_rate_3x3)+
-                            (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2),0),
+        m_movement_selector(
+                (int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2/this->m_step_rate_3x3)+
+                (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1/this->m_step_rate_3x3)+
+                (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2),0),
         m_movement_selector_length(this->m_movement_selector.size()),
         m_step_attempts_per_timestep((int)(this->m_number_of_tracers_1x1*this->m_step_rate_1x1)+
                                      (int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)+
