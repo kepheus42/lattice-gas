@@ -35,10 +35,10 @@ int main(int ac, char** av){
         int wtd_max = atoi(av[7]);
         int wtd_res = atoi(av[8]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        double step_rate_1x1 = 1.0;
-        double step_rate_2x2 = 1.0/2.0;
+        double step_rate_1x1 = atoi(av[9]);
+        double step_rate_2x2 = atoi(av[10]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_lattices = atoi(av[9]);
+        int number_of_lattices = atoi(av[11]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         printf("X:%4d Y:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d\n",grid_size_x,grid_size_y,number_of_tracers_1x1,number_of_tracers_2x2,number_of_timesteps,number_of_timesteps_warmup,number_of_lattices);
         // - - - - - - - - - - - - - - - - - - - - - - - - -

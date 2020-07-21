@@ -315,7 +315,6 @@ void Lattice::set_neighbor_sites(Site_1x1 * s)
         tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-0,tmp_y+2)]);
         tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]);
         s->set_neighbors_2x2(tmp_sites);
-
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 // for the neighbors of 2x2 type sites
@@ -350,7 +349,6 @@ void Lattice::set_neighbor_sites(Site_2x2 * s)
         tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]);
         tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]);
         s->set_neighbors_2x2(tmp_sites);
-
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 unsigned long Lattice::get_sum_steps_taken_1x1()

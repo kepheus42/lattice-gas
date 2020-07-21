@@ -9,6 +9,10 @@
 #define D(x) do {} while(0)
 #endif
 
+//
+// map<int, int> m_next_sites;
+// map<int, std::vector<int>> m_neighbor_coords;
+//
 
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // C O N S T R U C T O R

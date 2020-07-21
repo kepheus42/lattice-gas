@@ -18,14 +18,6 @@ void Site::set_neighbors(std::vector<Site*> sites){
         this->m_neighbors = sites;
 }
 
-void Site::set_neighbors_1x1(std::vector<Site*> sites) {
-        this->m_neighbors_1x1 = sites;
-}
-
-void Site::set_neighbors_2x2(std::vector<Site*> sites) {
-        this->m_neighbors_2x2 = sites;
-}
-
 void Site::set_empty() {
         this->m_is_empty = true;
 }
@@ -50,15 +42,15 @@ virtual int Site::step_is_invalid(dir){
 
 }
 
-int Site::pos_x() {
+int Site::get_x() {
         return this->m_x;
 }
 
-int Site::pos_y() {
+int Site::get_y() {
         return this->m_y;
 }
 
-Site_1x1::Site_1x1(int id, int x, int y) : Site(id, x, y), m_neighbors_1x1(4), m_neighbors_2x2(8)
+Site_1x1::Site_1x1(int id, int x, int y) : Site(id, x, y), m_neighbors_1x1(4)
 {
         //...
 }
@@ -117,7 +109,7 @@ int Site_1x1::step_is_invalid(dir){
         }
 }
 
-Site_2x2::Site_2x2(int id, int x, int y) : Site(id, x, y), m_neighbors_1x1(8), m_neighbors_2x2(12)
+Site_2x2::Site_2x2(int id, int x, int y) : Site(id, x, y), m_neighbors(8)
 {
         // ...
 }
