@@ -39,6 +39,7 @@ int main(int ac, char** av){
         double step_rate_2x2 = atoi(av[10]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int number_of_lattices = atoi(av[11]);
+        int number_of_pos_to_save = atoi(av[12]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         printf("X:%4d Y:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d\n",grid_size_x,grid_size_y,number_of_tracers_1x1,number_of_tracers_2x2,number_of_timesteps,number_of_timesteps_warmup,number_of_lattices);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -55,6 +56,9 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string output_file_name_corr_1x1;
         std::string output_file_name_corr_2x2;
+        // - - - - - - - - - - - - - - - - - - - - - - - - -
+        std::string output_file_name_pos_1x1;
+        std::string output_file_name_pos_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         output_file_name_base_string =
                 "X_"+std::to_string(grid_size_x)+
@@ -76,6 +80,9 @@ int main(int ac, char** av){
         output_file_name_corr_1x1 = "corr_1x1_"+output_file_name_base_string;
         output_file_name_corr_2x2 = "corr_2x2_"+output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
+        output_file_name_pos_1x1 = "pos_1x1_"+output_file_name_base_string;
+        output_file_name_pos_2x2 = "pos_2x2_"+output_file_name_base_string;
+        // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string header_string;
         header_string = "Hello!";
         // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -88,12 +95,11 @@ int main(int ac, char** av){
                                         number_of_timesteps_warmup,
                                         number_of_tracers_1x1,
                                         number_of_tracers_2x2,
-                                        0,
                                         step_rate_1x1,
                                         step_rate_2x2,
-                                        1.0,
                                         wtd_max,
-                                        wtd_res);
+                                        wtd_res,
+                                        number_of_pos_to_save);
         D(std::cerr << "Done!" << std::endl);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // perform warm up if number_of_timesteps_warmup
@@ -126,6 +132,8 @@ int main(int ac, char** av){
                                output_file_name_wtd_1x1);
                 vector_to_file(wrapper->get_result_correlations_1x1(),
                                output_file_name_corr_1x1);
+                vector_to_file(wrapper->get_result_positions_1x1(),
+                               output_file_name_pos_1x1);
         }
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         if(number_of_tracers_2x2)
@@ -138,6 +146,8 @@ int main(int ac, char** av){
                                output_file_name_wtd_2x2);
                 vector_to_file(wrapper->get_result_correlations_2x2(),
                                output_file_name_corr_2x2);
+                vector_to_file(wrapper->get_result_positions_2x2(),
+                               output_file_name_pos_2x2);
         }
         // for(double d : wrapper->get_result_sublattice_conc_2x2()) { std::cout << d << std::endl;}
         printf("\rProgress:  DONE\n");

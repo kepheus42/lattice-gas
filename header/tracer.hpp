@@ -29,6 +29,8 @@ void unstuck();
 // property getters
 // --- id --
 int get_id();
+//
+int get_position();
 // --- x ---
 int get_x();
 int get_dx();
@@ -111,12 +113,5 @@ void step_warmup(std::vector<int> &, int);
 void step_unhindered(int,long);
 };
 
-class Tracer_3x3 : public Tracer {
-public:
-Tracer_3x3(int,int,int,int,int,double,int,int,int);
-void step(std::vector<int> &, int, long);
-void step_warmup(std::vector<int> &, int);
-void step_unhindered(int,long);
-};
 
 #endif

@@ -3,16 +3,23 @@
 #include <cmath>
 #include "lattice.hpp"
 #include "global.hpp"
+
+// Debugging code
+#ifdef DEBUG
+#define D(x) (x)
+#else
+#define D(x) do {} while(0)
+#endif
+// To add debugging messages, use D(std::cerr << "Debugging message 1 2 3!" << std::endl; )
+
 // - - - - - - - - - - - - - - - - - - - - - - - -
 Lattice::Lattice(int grid_size_x,
                  int grid_size_y,
                  int number_of_timesteps,
                  int number_of_tracers_1x1,
                  int number_of_tracers_2x2,
-                 int number_of_tracers_3x3,
                  double step_rate_1x1,
                  double step_rate_2x2,
-                 double step_rate_3x3,
                  int wtd_max,
                  int wtd_res) :
         m_t(0),
@@ -21,31 +28,27 @@ Lattice::Lattice(int grid_size_x,
         m_number_of_timesteps(number_of_timesteps),
         m_number_of_tracers_1x1(number_of_tracers_1x1),
         m_number_of_tracers_2x2(number_of_tracers_2x2),
-        m_number_of_tracers_3x3(number_of_tracers_3x3),
-        m_number_of_tracers_total(number_of_tracers_1x1+number_of_tracers_2x2+number_of_tracers_3x3),
+        m_number_of_tracers_total(number_of_tracers_1x1+number_of_tracers_2x2),
         m_step_rate_1x1(number_of_tracers_1x1 > 0 ? step_rate_1x1 : 1.0),
         m_step_rate_2x2(number_of_tracers_2x2 > 0 ? step_rate_2x2 : 1.0),
-        m_step_rate_3x3(number_of_tracers_3x3 > 0 ? step_rate_3x3 : 1.0),
         m_wtd_max(wtd_max),
         m_wtd_res(wtd_res),
         m_movement_selector(
-                (int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2/this->m_step_rate_3x3)+
-                (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1/this->m_step_rate_3x3)+
-                (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2),0),
+                (int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2)+
+                (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1),0),
         m_movement_selector_length(this->m_movement_selector.size()),
         m_step_attempts_per_timestep((int)(this->m_number_of_tracers_1x1*this->m_step_rate_1x1)+
-                                     (int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)+
-                                     (int)(this->m_number_of_tracers_3x3*this->m_step_rate_3x3)),
+                                     (int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)),
         m_t_increment(1.0/(double)this->m_step_attempts_per_timestep),
         m_occupation_map(grid_size_x*grid_size_y,0)
 
 {
         // check if there's enough space on the grid to place the tracers
-        if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2 + 9*number_of_tracers_3x3)
+        if (grid_size_x*grid_size_y < number_of_tracers_1x1 + 4*number_of_tracers_2x2)
         {
                 throw std::invalid_argument("Too many tracers for grid of the given size!");
         }
-        else if (((number_of_tracers_2x2 > 0)&&((grid_size_x < 2)||(grid_size_y < 2)))||((number_of_tracers_3x3 > 0)&&((grid_size_x < 3)||(grid_size_y < 3))))
+        else if ((number_of_tracers_2x2 > 0)&&((grid_size_x < 2)||(grid_size_y < 2)))
         {
                 throw std::invalid_argument("Grid is too narrow for 2x2 or 3x3 tracers!");
         }
@@ -63,74 +66,41 @@ void Lattice::setup_movement_selection_list()
 
         // use the movement selector list to randomly pick particles to move, with probabilities proportional to the ratios of the stepping rates and numbers of particles
         int tmp_idx = 0;
-        // The first 1x1 tracer is this->Tracers[n_3x3 + n_2x2], the first 2x2 tracer is this->Tracers[n_3x3]
-        int tmp_idx_1x1 = this->m_number_of_tracers_3x3 + this->m_number_of_tracers_2x2;
-        int tmp_idx_2x2 = this->m_number_of_tracers_3x3;
+        // The first 1x1 tracer is this->Tracers[n_2x2], the first 2x2 tracer is this->Tracers[0]
+        int tmp_idx_1x1 = this->m_number_of_tracers_2x2;
         // tmp_m1 - tmp_m3 : how many times each tracer idx for tracers of types 1-3 appears in the list
-        int tmp_m1 = (int)(1/this->m_step_rate_2x2/this->m_step_rate_3x3);
-        int tmp_m2 = (int)(1/this->m_step_rate_1x1/this->m_step_rate_3x3);
-        int tmp_m3 = (int)(1/this->m_step_rate_1x1/this->m_step_rate_2x2);
+        int tmp_m1 = (int)(1/this->m_step_rate_2x2);
+        int tmp_m2 = (int)(1/this->m_step_rate_1x1);
         // tmp_n1 - tmp_n3 : how many list entires do types 1 - 3 get in the final list
-        int tmp_n1 = (int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2/this->m_step_rate_3x3);
-        int tmp_n2 = (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1/this->m_step_rate_3x3);
-        int tmp_n3 = (int)(this->m_number_of_tracers_3x3/this->m_step_rate_1x1/this->m_step_rate_2x2);
-        for(int n = 0; n < tmp_n3; n++)
-        {
-                this->m_movement_selector[tmp_idx] = n/tmp_m3;
-                tmp_idx++;
+        int tmp_n1 = (int)(this->m_number_of_tracers_1x1/this->m_step_rate_2x2);
+        int tmp_n2 = (int)(this->m_number_of_tracers_2x2/this->m_step_rate_1x1);
+        // fill the movement selector vector according to the numbers of tracers
+        if(this->m_number_of_tracers_2x2) {
+                for(int n = 0; n < tmp_n2; n++)
+                {
+                        this->m_movement_selector[tmp_idx] = n/tmp_m2;
+                        tmp_idx++;
+                }
         }
-        for(int n = 0; n < tmp_n2; n++)
-        {
-                this->m_movement_selector[tmp_idx] = tmp_idx_2x2 + n/tmp_m2;
-                tmp_idx++;
+        if(this->m_number_of_tracers_1x1) {
+                for(int n = 0; n < tmp_n1; n++)
+                {
+                        this->m_movement_selector[tmp_idx] =  tmp_idx_1x1 + n/tmp_m1;
+                        tmp_idx++;
+                }
         }
-        for(int n = 0; n < tmp_n1; n++)
-        {
-                this->m_movement_selector[tmp_idx] =  tmp_idx_1x1 + n/tmp_m1;
-                tmp_idx++;
-        }
+        D(std::cout << "Size of m_movement_selector: " << this->m_movement_selector.size() << std::endl);
+        // D(for(int n : this->m_movement_selector) { std::cout << n << std::endl });
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 void Lattice::setup_tracers()
 {
         // create a vector to store pointers to all the tracers
-        this->m_tracers.reserve(this->m_number_of_tracers_1x1 + this->m_number_of_tracers_2x2 + this->m_number_of_tracers_3x3);
+        this->m_tracers.reserve(this->m_number_of_tracers_total);
         // tmp vector to handle start position allocation for 3x3 tracers
         int tmp_id = 1;
         int tmp_x;
         int tmp_y;
-        if(this->m_number_of_tracers_3x3)
-        {
-                this->m_tracers_3x3.reserve(this->m_number_of_tracers_3x3);
-                std::vector<int> tmp_start_positions_3x3;
-                tmp_start_positions_3x3.reserve(this->m_grid_size_x/3 * this->m_grid_size_y/3);
-                for (int y=0; y < this->m_grid_size_y; y+=3)
-                {
-                        for (int x=0; x < this->m_grid_size_x; x+=3)
-                        {
-                                tmp_start_positions_3x3.push_back(x * this->m_grid_size_y + y);
-                        }
-                }
-                // create the 3x3 tracers:
-                shuffle_vector(tmp_start_positions_3x3);
-                for (int n = 0; n < this->m_number_of_tracers_3x3; n++)
-                {
-                        tmp_y = tmp_start_positions_3x3[n] % this->m_grid_size_y;
-                        tmp_x = (tmp_start_positions_3x3[n] - tmp_y)/this->m_grid_size_y;
-                        this->m_tracers.push_back(new Tracer_3x3(tmp_id,tmp_x,tmp_y,this->m_grid_size_x,this->m_grid_size_y,this->m_step_rate_3x3,this->m_wtd_max,this->m_wtd_res,this->m_step_attempts_per_timestep));
-                        this->m_tracers_3x3.push_back(this->m_tracers.back());
-                        this->m_occupation_map[this->coord(tmp_x+0,tmp_y+0)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+1,tmp_y+0)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+2,tmp_y+0)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+0,tmp_y+1)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+1,tmp_y+1)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+2,tmp_y+1)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+0,tmp_y+2)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+1,tmp_y+2)] = tmp_id;
-                        this->m_occupation_map[this->coord(tmp_x+2,tmp_y+2)] = tmp_id;
-                        tmp_id++;
-                }
-        }
         if(this->m_number_of_tracers_2x2)
         {
                 this->m_tracers_2x2.reserve(this->m_number_of_tracers_2x2);
@@ -165,7 +135,7 @@ void Lattice::setup_tracers()
                 this->m_tracers_1x1.reserve(this->m_number_of_tracers_1x1);
                 // tmp vector to handle creation of the 1x1 tracers
                 std::vector<int> tmp_start_positions_1x1;
-                tmp_start_positions_1x1.reserve(this->m_grid_size_x * this->m_grid_size_y - 4 * this->m_number_of_tracers_2x2 - 9 * this->m_number_of_tracers_3x3);
+                tmp_start_positions_1x1.reserve(this->m_grid_size_x * this->m_grid_size_y - 4 * this->m_number_of_tracers_2x2);
                 for (int i = 0; i < this->m_grid_size_x*this->m_grid_size_y; i++)
                 {
                         if(!this->m_occupation_map[i])
@@ -258,11 +228,6 @@ int Lattice::get_number_of_tracers_2x2()
         return this->m_number_of_tracers_2x2;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
-int Lattice::get_number_of_tracers_3x3()
-{
-        return this->m_number_of_tracers_3x3;
-}
-// - - - - - - - - - - - - - - - - - - - - - - - -
 int Lattice::get_grid_size_x()
 {
         return this->m_grid_size_x;
@@ -300,10 +265,6 @@ std::vector<Tracer *> Lattice::get_tracers_1x1()
 std::vector<Tracer *> Lattice::get_tracers_2x2()
 {
         return this->m_tracers_2x2;
-}
-std::vector<Tracer *> Lattice::get_tracers_3x3()
-{
-        return this->m_tracers_3x3;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> Lattice::get_tracer_positions()

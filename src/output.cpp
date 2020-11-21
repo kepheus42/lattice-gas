@@ -1,4 +1,13 @@
 #include "output.hpp"
+
+// Debugging code
+#ifdef DEBUG
+#define D(x) (x)
+#else
+#define D(x) do {} while(0)
+#endif
+// To add debugging messages, use D(std::cerr << "Debugging message 1 2 3!" << std::endl; )
+
 // - - - - - - - - - - - - - - - - - - - - - - - -
 void vector_to_file(std::vector<int> vec, std::string fname){
         std::ofstream ofs;
