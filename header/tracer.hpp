@@ -52,13 +52,10 @@ protected:
 // = = = = = = = = = = = = =
 int m_id;
 int m_size;
-int m_position;
+Site* m_site;
 int m_dx;
 int m_dy;
 double m_lsquared;
-// = = = = = = = = = = = = =
-// 1 if the tracers most recent attempt to take a step was valid, 0 otherwise.
-bool m_last_step;
 // = = = = = = = = = = = = =
 std::vector<int> m_last_step_dir;
 // Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.

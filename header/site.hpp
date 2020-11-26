@@ -20,25 +20,25 @@
 
 class Site {
 public:
-Site(int,int,int);
-virtual bool step_is_valid(int);
-Site * get_neighbor_by_dir(int);
-void set_neighbors(std::vector<Site *>);
-// move from one site to a neighbor, specified by dir
-Site * move_to_neighbor(int);
+Site(int,int,int,int);
+bool step_is_valid(int);
 // to change the state of the Site
-void set_empty();
-void set_occupied();
+void set_neighbors(std::vector<Site *>);
+void set_neighbor_occupancy(std::vector<std::vector<bool*> >);
+void swap_state();
 // to get the state of the Site
 bool is_empty();
-bool is_blocked();
-//
+bool * get_state_ptr();
 int get_id();
 int get_x();
 int get_y();
+Site * get_neighbor_by_dir(int);
+// move from one site to a neighbor, specified by dir
+Site * move_to(int);
 // debug
 void db_print_vector(std::vector<Site *>);
 void db_print_properties();
+// TODO: check if this needs to be public...
 
 protected:
 int m_id;
@@ -47,8 +47,7 @@ int m_y;
 bool m_is_empty;
 int m_type;
 std::vector<Site *> m_neighbors;
-std::vector<Site *> m_neighbors_1x1;
-std::vector<Site *> m_neighbors_2x2;
+std::vector< std::vector <bool*> > m_neighbor_occupancy;
 };
 
 class Site_1x1 : public Site {

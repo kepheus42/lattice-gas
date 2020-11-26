@@ -11,19 +11,17 @@
 #define D(x) do {} while(0)
 #endif
 
-Site::Site(int id, int x, int y) : m_id(id), m_x(x), m_y(y), m_is_empty(true), m_type(0)
+Site::Site(int id, int x, int y, int t) : m_id(id), m_x(x), m_y(y), m_is_empty(true), m_type(t)
 {
         //this->m_neighbors.reserve(4);
         D(std::cout << "Creating site: " << id << " at " << x << "," << y << std::endl);
 }
 
-bool Site::step_is_valid(int)
+bool Site::step_is_valid(int dir)
 {
-        return false;
-}
-
-Site * Site::get_neighbor_by_dir(int dir){
-        return this->m_neighbors[dir-1];
+        int tmp = 1;
+        for(auto bp : this->m_neighbor_occupancy[dir-1]) { tmp *= (*bp); }
+        return tmp;
 }
 
 void Site::set_neighbors(std::vector<Site *> sites){
@@ -34,29 +32,30 @@ void Site::set_neighbors(std::vector<Site *> sites){
         this->m_neighbors = sites;
 }
 
-Site * Site::move_to_neighbor(int dir){
-        // leave this site
-        this->m_is_empty = true;
-        // move to neighbor,
-        this->m_neighbors[dir-1]->set_occupied();
-        // return neighbor back to tracer
+void Site::set_neighbor_occupancy(std::vector<std::vector<bool*> > vec){
+        this->m_neighbor_occupancy = vec;
+}
+
+Site * Site::move_to(int dir){
+        this->swap_state();
+        this->m_neighbors[dir-1]->swap_state();
         return this->m_neighbors[dir-1];
 }
 
-void Site::set_empty() {
-        this->m_is_empty = true;
-}
-
-void Site::set_occupied() {
-        this->m_is_empty = false;
+void Site::swap_state() {
+        this->m_is_empty = !this->m_is_empty;
 }
 
 bool Site::is_empty() {
         return this->m_is_empty;
 }
 
-bool Site::is_blocked() {
-        return !this->m_is_empty;
+bool * Site::get_state_ptr(){
+        return &(this->m_is_empty);
+}
+
+Site * Site::get_neighbor_by_dir(int dir){
+        return this->m_neighbors[dir-1];
 }
 
 int Site::get_id(){
