@@ -2,37 +2,41 @@
 #define LATTICE_H
 
 #include "tracer.hpp"
+#include "site.hpp"
+#include "global.hpp"
 #include <vector>
+#include <stdexcept>
+#include <iostream>
+#include <cmath>
 #include <random>
 #include <chrono>
 #include <algorithm>
 
+class Tracer;
+class Tracer_1x1;
+class Tracer_2x2;
+
+class Site;
+class Site_1x1;
+class Site_2x2;
+
 class Lattice {
 public:
-// constructor
-// two species (1x1,2x2), numbers of tracers, step rates
-Lattice(int,int,int,int,int,double,double,int,int);
-// function to create the specified numbers of tracers
-// m_number_of_tracers_1x1, m_number_of_tracers_2x2
-// with the corresponding step rates
+Lattice(int,int,int,int,double,double);
+
+void setup_sites();
 void setup_tracers();
-// function to initialize the tracer ID lists for random step order selection
 void setup_movement_selection_list();
-//
+
 void timestep();
 void timestep_warmup();
 void timestep_no_interaction();
-//
-// logic
-// computes the 1d linear coordinate from x,y tuple
+
 inline int coord(int,int);
-// performs a single timestep
-// warm up lattice before actual simulation
-void warm_up();
+
 // - - - - - - - - - - - - - - -
 // getters
 // - - - - - - - - - - - - - - -
-int get_t();
 int get_grid_size_x();
 int get_grid_size_y();
 int get_number_of_tracers_1x1();
@@ -48,36 +52,38 @@ std::vector<Tracer *> get_tracers_1x1();
 std::vector<Tracer *> get_tracers_2x2();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> get_tracer_positions();
-std::vector<int> get_occupation_map();
+
+void set_neighbor_sites(Site_1x1 *);
+void set_neighbor_sites(Site_2x2 *);
+
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // Debugging
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-void print_occupation_map();
 void print_tracer_positions();
+void print_sites();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 // parameters of the simulation
-int m_t;
 int m_grid_size_x;
 int m_grid_size_y;
-int m_number_of_timesteps;
+int m_number_of_sites;
+int m_number_of_tracers;
 int m_number_of_tracers_1x1;
 int m_number_of_tracers_2x2;
-int m_number_of_tracers_total;
 // variable base step rates for all tracer types (between 0.0 and 1.0)
 double m_step_rate_1x1;
 double m_step_rate_2x2;
-int m_wtd_max;
-int m_wtd_res;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> m_movement_selector;
 int m_movement_selector_length;
 int m_step_attempts_per_timestep;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-double m_t_increment;
-// - - - - - - - - - - - - - - - - - - - - - - - - -
 // to keep track of the positions of all tracers
-std::vector<int> m_occupation_map;
+std::vector<int> m_tracer_locations;
+std::vector<bool> m_occupation_map;
+// to keep track of the lattice geometry
+std::vector<Site_1x1*> m_sites_1x1;
+std::vector<Site_2x2*> m_sites_2x2;
 // to store the tracer objects
 std::vector<Tracer*> m_tracers;
 std::vector<Tracer*> m_tracers_1x1;

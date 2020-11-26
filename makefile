@@ -2,9 +2,10 @@ IDIR=./header
 LDIR=/usr/local/lib
 CC=g++
 CFLAGS=-I$(IDIR) -L$(LDIR) -lm -lboost_filesystem -lboost_system -std=c++17 -Wall -Ofast
+PBFLAGS=-I$(IDIR) -L$(LDIR) -lm -lboost_filesystem -lboost_system -std=c++17 -Wall -Wpedantic -g
 DBFLAGS=-I$(IDIR) -L$(LDIR) -lm -lboost_filesystem -lboost_system -std=c++17 -Wall -Wpedantic -g -DDEBUG
 
-SRC = ./src/global.cpp ./src/tracer.cpp ./src/lattice.cpp ./src/output.cpp ./src/wrapper.cpp
+SRC = ./src/tracer.cpp ./src/lattice.cpp ./src/site.cpp ./src/wrapper.cpp ./src/global.cpp
 
 $(info $$SRC is [${SRC}])
 
@@ -13,3 +14,6 @@ debug : ./src/lattice_gas.cpp $(SRC)
 
 build : ./src/lattice_gas.cpp $(SRC)
 	$(CC) $(CFLAGS) $^ -o lattice_gas
+
+profile : ./src/lattice_gas.cpp $(SRC)
+	$(CC) $(PBFLAGS) $^ -o lattice_gas

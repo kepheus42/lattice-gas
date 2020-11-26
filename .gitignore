@@ -1,4 +1,5 @@
 legacy/
 obj/
 build/
-./lattice_gas
+lattice_gas.dSYM
+lattice_gas
