@@ -21,25 +21,23 @@ Lattice::Lattice(int grid_size,
         m_number_of_tracers_2x2(number_of_tracers_2x2),
         m_step_rate_1x1(this->m_number_of_tracers_1x1 > 0 ? step_rate_1x1 : 1.0),
         m_step_rate_2x2(this->m_number_of_tracers_2x2 > 0 ? step_rate_2x2 : 1.0),
-        m_movement_selector(this->m_number_of_tracers_1x1*(int)(1/this->m_step_rate_2x2)+this->m_number_of_tracers_2x2*(int)(1/this->m_step_rate_1x1),0),
-        m_movement_selector_length(this->m_movement_selector.size()),
+        m_movement_selector_length(this->m_number_of_tracers_1x1*(int)(1/this->m_step_rate_2x2)+this->m_number_of_tracers_2x2*(int)(1/this->m_step_rate_1x1)),
+        m_movement_selector(this->m_movement_selector_length,0),
         m_step_attempts_per_timestep((int)(this->m_number_of_tracers_1x1*this->m_step_rate_1x1)+(int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)),
-        m_tracer_locations(this->m_number_of_tracers,0),
-        m_occupation_map(2*this->m_number_of_sites,0)
 {
         // check if there's enough space on the grid to place the tracers
         if (grid_size*grid_size < number_of_tracers_1x1 + 4*number_of_tracers_2x2)
         {
                 throw std::invalid_argument("Too many tracers for grid of the given size!");
         }
-        else if ((number_of_tracers_2x2 > 0)&&((grid_size < 2)||(grid_size < 2)))
+        else if (this->number_of_tracers_2x2&&(grid_size < 3))
         {
-                throw std::invalid_argument("Grid is too narrow for 2x2 or 3x3 tracers!");
+                throw std::invalid_argument("Grid is too small for 2x2 Tracer!");
         }
-
-        this->m_sites_1x1.reserve(this->m_number_of_sites);
-        this->m_sites_2x2.reserve(this->m_number_of_sites);
-
+        // only allocate memory for sites if the respective tracer species is present
+        this->m_sites_1x1.reserve(this->m_number_of_tracers_1x1 > 0 ? this->m_number_of_sites : 0);
+        this->m_sites_2x2.reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites : 0);
+        // allocate sufficient memory for the tracers
         this->m_tracers.reserve(this->m_number_of_tracers);
         this->m_tracers_1x1.reserve(this->m_number_of_tracers_1x1);
         this->m_tracers_2x2.reserve(this->m_number_of_tracers_2x2);
@@ -53,85 +51,135 @@ Lattice::Lattice(int grid_size,
 }
 
 void Lattice::setup_sites(){
+        D( std::cout << "Setting up sites..." << std::endl );
+        D( std::cout << "1x1: " );
+        if(this->m_number_of_tracers_1x1) {
+                for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++) {
+                        for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++) {
+                                //D( std::cout << "X: " << tmp_x << " Y: " << tmp_y << std::endl );
+                                this->m_sites_1x1.push_back(new Site_1x1(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 1));
+                        }
+                }
+        }
+        D( std::cout << this->m_sites_1x1.size() << std::endl );
+        D( std::cout << "2x2: " );
+        if(this->m_number_of_tracers_2x2) {
+                for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++) {
+                        for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++) {
+                                //D( std::cout << "X: " << tmp_x << " Y: " << tmp_y << std::endl );
+                                this->m_sites_2x2.push_back(new Site_2x2(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 2));
+                        }
+                }
+        }
+        D( std::cout << this->m_sites_2x2.size() << std::endl );
         int tmp_x;
         int tmp_y;
-        int* tmp_occupation_map = this->m_occupation_map.data();
-        D( std::cout << "Starting neighbors setup" << std::endl );
-        for(int n = 0; n < this->m_number_of_sites; n++) {
-                tmp_x = n/this->m_grid_size;
-                tmp_y = n%this->m_grid_size;
-                std::vector< std::vector< int *> > tmp_neighbors;
-                tmp_neighbors.reserve(4);
-                std::vector< int * > tmp_neighbors_dir(3);
-                // dir = 1
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_1x1(tmp_x+1,tmp_y+0)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_2x2(tmp_x+1,tmp_y+0)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_2x2(tmp_x+1,tmp_y+1)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                // dir = 2
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_1x1(tmp_x+0,tmp_y+1)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_2x2(tmp_x+0,tmp_y+2)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_2x2(tmp_x-1,tmp_y+2)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                // dir = 3
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_1x1(tmp_x-1,tmp_y+0)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_2x2(tmp_x-2,tmp_y+1)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_2x2(tmp_x-2,tmp_y+0)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                // dir = 4
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_1x1(tmp_x+0,tmp_y-1)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_2x2(tmp_x-1,tmp_y-1)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_2x2(tmp_x+0,tmp_y-1)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                //
-                this->m_neighbors.push_back(tmp_neighbors);
+        for(Site * s : this->m_sites_1x1) {
+                tmp_x = s->get_x();
+                tmp_y = s->get_y();
+                std::vector<Site *> tmp_sites;
+                tmp_sites.reserve(4);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-0)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-0,tmp_y-1)]);
+                s->set_neighbors(tmp_sites);
+                std::vector<std::vector<bool*> > tmp_occ;
+                tmp_occ.reserve(4);
+                if(!this->m_number_of_tracers_2x2) {
+                        // dir = 1
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr()});
+                        // dir = 2
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr()});
+                        // dir = 3
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-0)]->get_state_ptr()});
+                        // dir = 4
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x-0,tmp_y-1)]->get_state_ptr()});
+                }
+                else {
+                        // dir = 1
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr()});
+                        // dir = 2
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr()});
+                        // dir = 3
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+1)]->get_state_ptr()});
+                        // dir = 4
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x-0,tmp_y-1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-0,tmp_y+2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr()});
+
+                }
+                s->set_neighbor_occupancy(tmp_occ);
+        }
+        for(Site * s : this->m_sites_2x2) {
+                tmp_x = s->get_x();
+                tmp_y = s->get_y();
+                std::vector<Site *> tmp_sites;
+                tmp_sites.reserve(4);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+0)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-0)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-0,tmp_y-1)]);
+                s->set_neighbors(tmp_sites);
+                std::vector<std::vector<bool*> > tmp_occ;
+                tmp_occ.reserve(4);
+                if(!this->m_number_of_tracers_1x1) {
+                        // dir = 1
+                        tmp_occ.push_back({this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr()})
+                        // dir = 2
+                        tmp_occ.push_back({this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr()})
+                        // dir = 3
+                        tmp_occ.push_back({this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr()})
+                        // dir = 4
+                        tmp_occ.push_back({this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr()})
+                }
+                else{
+                        // dir = 1
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr(),
+                                           this->m_sites_1x1[this->coord(tmp_x+1,tmp_y-1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr()})
+                        // dir = 2
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
+                                           this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr()})
+                        // dir = 3
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr(),
+                                           this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-0)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr()})
+                        // dir = 4
+                        tmp_occ.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+1)]->get_state_ptr(),
+                                           this->m_sites_1x1[this->coord(tmp_x-0,tmp_y+1)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
+                                           this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr()})
+                }
+                s->set_neighbor_occupancy(tmp_occ);
         }
 
-        for(int n = this->m_number_of_sites; n < 2*this->m_number_of_sites; n++) {
-                tmp_x = n/this->m_grid_size;
-                tmp_y = n%this->m_grid_size;
-                std::vector< std::vector< int *> > tmp_neighbors;
-                tmp_neighbors.reserve(4);
-                std::vector< int * > tmp_neighbors_dir(6);
-                // dir = 1
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_2x2(tmp_x+1,tmp_y+0)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_1x1(tmp_x+2,tmp_y-1)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_1x1(tmp_x+2,tmp_y+0)];
-                tmp_neighbors_dir[3] = &tmp_occupation_map[this->coord_2x2(tmp_x+3,tmp_y+1)];
-                tmp_neighbors_dir[4] = &tmp_occupation_map[this->coord_2x2(tmp_x+3,tmp_y+0)];
-                tmp_neighbors_dir[5] = &tmp_occupation_map[this->coord_2x2(tmp_x+3,tmp_y-1)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                // dir = 2
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_2x2(tmp_x+0,tmp_y+1)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_1x1(tmp_x+1,tmp_y+1)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_1x1(tmp_x+0,tmp_y+1)];
-                tmp_neighbors_dir[3] = &tmp_occupation_map[this->coord_2x2(tmp_x+1,tmp_y+3)];
-                tmp_neighbors_dir[4] = &tmp_occupation_map[this->coord_2x2(tmp_x+0,tmp_y+3)];
-                tmp_neighbors_dir[5] = &tmp_occupation_map[this->coord_2x2(tmp_x-1,tmp_y+3)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                // dir = 3
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_2x2(tmp_x-1,tmp_y+0)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_1x1(tmp_x-1,tmp_y+0)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_1x1(tmp_x-1,tmp_y-1)];
-                tmp_neighbors_dir[3] = &tmp_occupation_map[this->coord_2x2(tmp_x-3,tmp_y+1)];
-                tmp_neighbors_dir[4] = &tmp_occupation_map[this->coord_2x2(tmp_x-3,tmp_y+0)];
-                tmp_neighbors_dir[5] = &tmp_occupation_map[this->coord_2x2(tmp_x-3,tmp_y-1)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                // dir = 4
-                tmp_neighbors_dir[0] = &tmp_occupation_map[this->coord_2x2(tmp_x+0,tmp_y-1)];
-                tmp_neighbors_dir[1] = &tmp_occupation_map[this->coord_1x1(tmp_x+0,tmp_y-2)];
-                tmp_neighbors_dir[2] = &tmp_occupation_map[this->coord_1x1(tmp_x+1,tmp_y-2)];
-                tmp_neighbors_dir[3] = &tmp_occupation_map[this->coord_2x2(tmp_x-1,tmp_y-3)];
-                tmp_neighbors_dir[4] = &tmp_occupation_map[this->coord_2x2(tmp_x+0,tmp_y-3)];
-                tmp_neighbors_dir[5] = &tmp_occupation_map[this->coord_2x2(tmp_x+1,tmp_y-3)];
-                tmp_neighbors.push_back(tmp_neighbors_dir);
-                //
-                this->m_neighbors.push_back(tmp_neighbors);
-        }
-        D( std::cout << "Finishing Neighbor setup " << std::endl );
-        D( this->print_neighbors() );
-        //D( this->print_sites() );
-        //D( std::cout << "Size of m_sites_1x1: " << this->m_sites_1x1.size() << std::endl << "Size of m_sites_2x2: " << this->m_sites_2x2.size() << std::endl);
+        D( std::cout << "Finished Neighbor setup..." << std::endl );
+        // D( this->print_neighbors() );
+        // D( this->print_sites() );
+        // D( std::cout << "Size of m_sites_1x1: " << this->m_sites_1x1.size() << std::endl << "Size of m_sites_2x2: " << this->m_sites_2x2.size() << std::endl);
 }
 
 void Lattice::setup_movement_selection_list()
@@ -205,13 +253,8 @@ void Lattice::setup_tracers()
                 for (int n = 0; n < this->m_number_of_tracers_2x2; n++)
                 {
                         tmp_pos = tmp_start_positions_2x2[n];
-                        // x and y location of the starting site
-                        tmp_x = this->coord_to_x(tmp_pos);
-                        tmp_y = this->coord_to_y(tmp_pos);
-                        this->m_tracer_locations[tmp_id] = tmp_pos;
-                        this->m_occupation_map[this->coord_2x2(tmp_x,tmp_y)] = tmp_id;
                         // create new tracer at starting site
-                        this->m_tracers.push_back(new Tracer_2x2(tmp_id,tmp_pos));
+                        this->m_tracers.push_back(new Tracer_2x2(tmp_id,this->m_sites_2x2[tmp_pos]));
                         this->m_tracers_2x2.push_back(this->m_tracers.back());
                         // increment id counter,
                         tmp_id++;
@@ -246,21 +289,14 @@ void Lattice::setup_tracers()
                 for (int n = 0; n < this->m_number_of_tracers_1x1; n++)
                 {
                         tmp_pos = tmp_start_positions_1x1[n];
-                        // x and y location of the starting site
-                        tmp_x = this->coord_to_x(tmp_pos);
-                        tmp_y = this->coord_to_y(tmp_pos);
-                        this->m_tracer_locations[tmp_id] = tmp_pos;
-                        this->m_occupation_map[this->coord_1x1(tmp_x,tmp_y)] = tmp_id;
                         // create new tracer at starting site
-                        this->m_tracer_locations[tmp_id] = tmp_start_positions_1x1[n];
-                        this->m_tracers.push_back(new Tracer(tmp_id,tmp_pos));
+                        this->m_tracers.push_back(new Tracer(tmp_id,this->m_sites_1x1[tmp_pos]));
                         this->m_tracers_1x1.push_back(this->m_tracers.back());
                         // increment id counter,
                         tmp_id++;
                 }
                 //D( std::cout << "Number of Tracers 1x1: " << this->m_tracers_1x1.size() << std::endl);
         }
-        D( print_vector(this->m_tracer_locations) );
         //D( std::cout << "Number of Tracers: " << this->m_tracers.size() << std::endl);
 }
 
@@ -395,69 +431,6 @@ std::vector<int> Lattice::get_tracer_positions()
         return tmp_tracer_positions;
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - -
-// Setup funtions for the neighbor relationships between the lattice sites
-// - - - - - - - - - - - - - - - - - - - - - - - -
-// for the neighbors of 1x1 type sites
-// - - - - - - - - - - - - - - - - - - - - - - - -
-
-void Lattice::set_neighbor_sites(Site_1x1 * s)
-{
-        int tmp_x = s->get_x();
-        int tmp_y = s->get_y();
-        std::vector<Site *> tmp_sites;
-        tmp_sites.reserve(12);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-0)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-0,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-0)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-0,tmp_y+2)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]);
-        s->set_neighbors(tmp_sites);
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - -
-// for the neighbors of 2x2 type sites
-// - - - - - - - - - - - - - - - - - - - - - - - -
-
-void Lattice::set_neighbor_sites(Site_2x2 * s)
-{
-        int tmp_x = s->get_x();
-        int tmp_y = s->get_y();
-        std::vector<Site *> tmp_sites;
-        tmp_sites.reserve(24);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+0)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-0)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-0,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+1,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-2)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-2)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-2,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+0)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-0,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-0)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]);
-        tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]);
-        s->set_neighbors(tmp_sites);
-}
 
 // - - - - - - - - - - - - - - - - - - - - - - - -
 // D E B U G G I N G  O U T P U T

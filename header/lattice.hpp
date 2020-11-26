@@ -81,13 +81,9 @@ std::vector<int> m_movement_selector;
 int m_movement_selector_length;
 int m_step_attempts_per_timestep;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-// to keep track of the positions of all tracers
-std::vector< int > m_tracer_locations;
-std::vector< int > m_occupation_map;
-std::vector< std::vector< std::vector< int * > > > m_neighbors;
 // to keep track of the lattice geometry
-std::vector<Site_1x1*> m_sites_1x1;
-std::vector<Site_2x2*> m_sites_2x2;
+std::vector<Site*> m_sites_1x1;
+std::vector<Site*> m_sites_2x2;
 // to store the tracer objects
 std::vector<Tracer*> m_tracers;
 std::vector<Tracer*> m_tracers_1x1;
