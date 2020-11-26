@@ -22,7 +22,7 @@ class Site_2x2;
 
 class Lattice {
 public:
-Lattice(int,int,int,int,double,double);
+Lattice(int,int,int,double,double);
 
 void setup_sites();
 void setup_tracers();
@@ -33,12 +33,15 @@ void timestep_warmup();
 void timestep_no_interaction();
 
 inline int coord(int,int);
+inline int coord_1x1(int,int);
+inline int coord_2x2(int,int);
 
+inline int coord_to_x(int);
+inline int coord_to_y(int);
 // - - - - - - - - - - - - - - -
 // getters
 // - - - - - - - - - - - - - - -
-int get_grid_size_x();
-int get_grid_size_y();
+int get_grid_size();
 int get_number_of_tracers_1x1();
 int get_number_of_tracers_2x2();
 // - - - - - - - - - - - - - - -
@@ -60,12 +63,12 @@ void set_neighbor_sites(Site_2x2 *);
 // Debugging
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void print_tracer_positions();
+void print_neighbors();
 void print_sites();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 // parameters of the simulation
-int m_grid_size_x;
-int m_grid_size_y;
+int m_grid_size;
 int m_number_of_sites;
 int m_number_of_tracers;
 int m_number_of_tracers_1x1;
@@ -79,8 +82,9 @@ int m_movement_selector_length;
 int m_step_attempts_per_timestep;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // to keep track of the positions of all tracers
-std::vector<int> m_tracer_locations;
-std::vector<bool> m_occupation_map;
+std::vector< int > m_tracer_locations;
+std::vector< int > m_occupation_map;
+std::vector< std::vector< std::vector< int * > > > m_neighbors;
 // to keep track of the lattice geometry
 std::vector<Site_1x1*> m_sites_1x1;
 std::vector<Site_2x2*> m_sites_2x2;

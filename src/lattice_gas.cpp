@@ -28,24 +28,29 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int rng_seed = atoi(av[1]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int grid_size_x = atoi(av[2]);
-        int grid_size_y = atoi(av[3]);
+        int grid_size = atoi(av[2]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_timesteps = atoi(av[4]);
-        int number_of_timesteps_warmup = atoi(av[5]);
+        int number_of_timesteps = atoi(av[3]);
+        int number_of_timesteps_warmup = atoi(av[4]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_tracers_1x1 = atoi(av[6]);
-        int number_of_tracers_2x2 = atoi(av[7]);
+        int number_of_tracers_1x1 = atoi(av[5]);
+        int number_of_tracers_2x2 = atoi(av[6]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        double step_rate_1x1 = atof(av[8]);
-        double step_rate_2x2 = atof(av[9]);
+        double step_rate_1x1 = atof(av[7]);
+        double step_rate_2x2 = atof(av[8]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_lattices = atoi(av[10]);
+        int number_of_lattices = atoi(av[9]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_pos_to_save = atoi(av[11]);
+        int number_of_pos_to_save = atoi(av[10]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         set_rng_seed(rng_seed);
-        printf("X:%4d Y:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d\n",grid_size_x,grid_size_y,number_of_tracers_1x1,number_of_tracers_2x2,number_of_timesteps,number_of_timesteps_warmup,number_of_lattices);
+        printf("X:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d\n",
+               grid_size,
+               number_of_tracers_1x1,
+               number_of_tracers_2x2,
+               number_of_timesteps,
+               number_of_timesteps_warmup,
+               number_of_lattices);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         std::string output_file_name_base_string;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -62,8 +67,7 @@ int main(int ac, char** av){
         std::string output_file_name_pos_2x2;
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         output_file_name_base_string =
-                "X_"+std::to_string(grid_size_x)+
-                "_Y_"+std::to_string(grid_size_y)+
+                "XY_"+std::to_string(grid_size)+
                 "_N1_"+std::to_string(number_of_tracers_1x1)+
                 "_N2_"+std::to_string(number_of_tracers_2x2)+
                 "_T_"+std::to_string(number_of_timesteps)+
@@ -87,8 +91,7 @@ int main(int ac, char** av){
         // create a wrapper
         D(std::cerr << "Creating Wrapper ..." << std::endl);
         Wrapper * wrapper = new Wrapper(number_of_lattices,
-                                        grid_size_x,
-                                        grid_size_y,
+                                        grid_size,
                                         number_of_timesteps,
                                         number_of_timesteps_warmup,
                                         number_of_tracers_1x1,

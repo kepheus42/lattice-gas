@@ -9,7 +9,7 @@
 class Wrapper {
 public:
 
-Wrapper(int,int,int,int,int,int,int,double,double,int);
+Wrapper(int,int,int,int,int,int,double,double,int);
 
 inline int coord(int,int);
 
@@ -65,8 +65,7 @@ std::vector<Tracer*> m_tracers_1x1;
 std::vector<Tracer*> m_tracers_2x2;
 
 int m_number_of_lattices;
-int m_grid_size_x;
-int m_grid_size_y;
+int m_grid_size;
 int m_number_of_timesteps;
 int m_t;
 int m_number_of_tracers_1x1;

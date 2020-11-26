@@ -12,7 +12,7 @@ class Lattice;
 
 class Tracer {
 public:
-Tracer(int,Site*);
+Tracer(int,int);
 // different versions for the 2x2 square tracers -> therefore virtual
 void step(int);
 void step_warmup(int);
@@ -52,7 +52,7 @@ protected:
 // = = = = = = = = = = = = =
 int m_id;
 int m_size;
-Site* m_site;
+int m_position;
 int m_dx;
 int m_dy;
 double m_lsquared;
@@ -78,7 +78,7 @@ bool m_isstuck;
 
 class Tracer_2x2 : public Tracer {
 public:
-Tracer_2x2(int,Site*);
+Tracer_2x2(int,int);
 };
 
 

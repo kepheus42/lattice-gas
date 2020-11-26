@@ -13,8 +13,7 @@
 // to store multiple lattices and perform mc simulations simultaneously
 // - - - - - - - - - - - - - - - - - - - - - - - -
 Wrapper::Wrapper(int number_of_lattices,
-                 int grid_size_x,
-                 int grid_size_y,
+                 int grid_size,
                  int number_of_timesteps,
                  int number_of_timesteps_warmup,
                  int number_of_tracers_1x1,
@@ -24,8 +23,7 @@ Wrapper::Wrapper(int number_of_lattices,
                  int number_of_pos_to_save) :
         // sim parameters
         m_number_of_lattices(number_of_lattices),
-        m_grid_size_x(grid_size_x),
-        m_grid_size_y(grid_size_y),
+        m_grid_size(grid_size),
         m_number_of_timesteps(number_of_timesteps),
         m_t(0),
         m_number_of_tracers_1x1(number_of_tracers_1x1),
@@ -60,8 +58,7 @@ Wrapper::Wrapper(int number_of_lattices,
         //D( std::cout << "Wrapper: " << this->m_number_of_tracers_1x1_times_number_of_lattices << " " << this->m_number_of_tracers_2x2_times_number_of_lattices << std::endl );
         //
         while(this->m_lattices.size() < m_number_of_lattices) {
-                this->m_lattices.push_back(new Lattice(this->m_grid_size_x,
-                                                       this->m_grid_size_y,
+                this->m_lattices.push_back(new Lattice(this->m_grid_size,
                                                        this->m_number_of_tracers_1x1,
                                                        this->m_number_of_tracers_2x2,
                                                        this->m_step_rate_1x1,
@@ -99,7 +96,7 @@ Wrapper::Wrapper(int number_of_lattices,
 
 inline int Wrapper::coord(int x, int y){
         //
-        return ((x+this->m_grid_size_x)%this->m_grid_size_x)*this->m_grid_size_y+((y+this->m_grid_size_y)%this->m_grid_size_y);
+        return ((x+this->m_grid_size)%this->m_grid_size)*this->m_grid_size+((y+this->m_grid_size)%this->m_grid_size);
 }
 
 //

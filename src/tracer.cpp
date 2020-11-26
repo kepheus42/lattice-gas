@@ -11,10 +11,10 @@
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // C O N S T R U C T O R
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-Tracer::Tracer(int id, Site * starting_site) :
+Tracer::Tracer(int id, int start_position) :
         m_id(id),
         m_size(1),
-        m_site(starting_site),
+        m_position(start_position),
         m_dx(0),
         m_dy(0),
         m_lsquared(0),
@@ -57,7 +57,6 @@ void Tracer::step(int dir){
         // if(!this->m_site->step_is_valid(dir)) { return; }
         // { return; }
         // this->m_site=this->m_site->move_to_neighbor(dir);
-        this->m_site = this->m_site->get_neighbor_by_dir(dir);
         this->m_steps_taken++;
         this->update_last_step(dir);
         switch(dir)
@@ -76,13 +75,13 @@ void Tracer::step(int dir){
 // contains only logic for site blocking and trapping
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer::step_warmup(int dir){
-        // if(this->m_isstuck) { return; }
-        if(!(this->m_site->step_is_valid(dir))) { return; }
-        this->m_site=this->m_site->move_to_neighbor(dir);
+//  if(this->m_isstuck) { return; }
+//        if(!(this->m_site->step_is_valid(dir))) { return; }
+//        this->m_site=this->m_site->move_to_neighbor(dir);
+        return;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void Tracer::step_unhindered(int dir){
-        this->m_site=this->m_site->move_to_neighbor(dir);
         switch(dir)
         {
         case 1: this->m_dx++; break;
@@ -104,7 +103,7 @@ int Tracer::get_id()
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 int Tracer::get_x()
 {
-        return this->m_site->get_x();
+        return 0;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 int Tracer::get_dx()
@@ -114,7 +113,7 @@ int Tracer::get_dx()
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 int Tracer::get_y()
 {
-        return this->m_site->get_y();
+        return 0;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 int Tracer::get_dy()
@@ -129,7 +128,7 @@ int Tracer::get_size()
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 double Tracer::get_lsquared()
 {
-        return pow((double)this->m_dx,2.0)+pow((double)this->m_dy,2.0);
+        return (double)(this->m_dx*this->m_dx)+(double)(this->m_dy*this->m_dy);
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 bool Tracer::get_isstuck()
@@ -165,7 +164,7 @@ void Tracer::unstuck()
         this->m_isstuck = false;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-Tracer_2x2::Tracer_2x2(int id, Site * starting_site) : Tracer(id,starting_site)
+Tracer_2x2::Tracer_2x2(int id, int start_position) : Tracer(id,start_position)
 {
         // change default size
         this->m_size = 4;
