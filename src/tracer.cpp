@@ -14,9 +14,9 @@
    = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-Tracer::Tracer(int id, Site * site) :
+Tracer::Tracer(int id, int type, Site * site) :
         m_id(id),
-        m_size(1),
+        m_type(type),
         m_site(site),
         m_dx(0),
         m_dy(0),

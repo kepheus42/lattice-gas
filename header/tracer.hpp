@@ -12,8 +12,8 @@ class Lattice;
 
 class Tracer {
 public:
-Tracer(int,int);
-// different versions for the 2x2 square tracers -> therefore virtual
+Tracer(int,int,Site*);
+//
 void step(int);
 void step_warmup(int);
 void step_unhindered(int);
@@ -51,7 +51,7 @@ std::vector<long> get_correlations();
 protected:
 // = = = = = = = = = = = = =
 int m_id;
-int m_size;
+int m_type;
 Site* m_site;
 int m_dx;
 int m_dy;

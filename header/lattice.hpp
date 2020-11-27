@@ -33,9 +33,6 @@ void timestep_warmup();
 void timestep_no_interaction();
 
 inline int coord(int,int);
-inline int coord_1x1(int,int);
-inline int coord_2x2(int,int);
-
 inline int coord_to_x(int);
 inline int coord_to_y(int);
 // - - - - - - - - - - - - - - -
@@ -45,29 +42,20 @@ int get_grid_size();
 int get_number_of_tracers_1x1();
 int get_number_of_tracers_2x2();
 // - - - - - - - - - - - - - - -
-int get_tracer_size(int);
-int get_tracer_last_move(int);
-int get_tracer_position_x(int);
-int get_tracer_position_y(int);
-// - - - - - - - - - - - - - - -
 std::vector<Tracer *> get_tracers();
 std::vector<Tracer *> get_tracers_1x1();
 std::vector<Tracer *> get_tracers_2x2();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 std::vector<int> get_tracer_positions();
-
-void set_neighbor_sites(Site_1x1 *);
-void set_neighbor_sites(Site_2x2 *);
-
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // Debugging
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 void print_tracer_positions();
-void print_neighbors();
 void print_sites();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 // parameters of the simulation
+int m_t;
 int m_grid_size;
 int m_number_of_sites;
 int m_number_of_tracers;
