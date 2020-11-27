@@ -48,7 +48,9 @@ std::vector<int> get_tracer_positions();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // Debugging
 // - - - - - - - - - - - - - - - - - - - - - - - - -
+void print_tracers();
 void print_tracer_positions();
+void print_site_states();
 void print_sites();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
@@ -68,6 +70,7 @@ int m_movement_selector_length;
 std::vector<int> m_movement_selector;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // to keep track of the lattice geometry
+std::vector<Site*> m_sites;
 std::vector<Site*> m_sites_1x1;
 std::vector<Site*> m_sites_2x2;
 // to store the tracer objects

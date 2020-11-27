@@ -15,6 +15,7 @@ inline int coord(int,int);
 
 void timestep();
 void timestep_warmup();
+void timestep_no_interaction();
 
 // wrapper function to call all the updating routines
 inline void update_data();

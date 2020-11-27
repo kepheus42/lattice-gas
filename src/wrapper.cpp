@@ -116,6 +116,13 @@ void Wrapper::timestep_warmup(){
         }
 }
 // = = = = = = = = = = = = = = = = = = = = = = = = =
+void Wrapper::timestep_no_interaction(){
+        for(Lattice * l : this->m_lattices)
+        {
+                l->timestep_no_interaction();
+        }
+}
+// = = = = = = = = = = = = = = = = = = = = = = = = =
 int Wrapper::get_t()
 {
         return this->m_t;

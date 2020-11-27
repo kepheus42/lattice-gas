@@ -41,6 +41,7 @@ double get_lsquared();
 // --- stuck or not stuck ---
 bool get_isstuck();
 //
+int reset_steps_taken();
 int get_steps_taken();
 //
 bool get_last_step();

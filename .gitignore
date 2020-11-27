@@ -7,3 +7,4 @@ msd_*
 corr_*
 rate_*
 pos_*
+perf_test.sh

@@ -26,6 +26,7 @@ Tracer::Tracer(int id, int type, Site * site) :
         m_steps_taken(0),
         m_isstuck(false)
 {
+        this->m_site->swap_state();
         //D( std::cout << "Creating 1x1 Tracer " << this->m_id << " at " << "(" << this->m_site->get_x() << "," << this->m_site->get_y() << ")" << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -52,17 +53,19 @@ void Tracer::step(int dir){
         //D( std::cout << "STEP!" << std::endl );
         //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsquared << std::endl );
         //D( std::cout << "Dir: " << dir << std::endl );
-        if(this->m_isstuck) { return; }
-        if(!this->m_site->step_is_valid(dir)) { return; }
-        this->m_site=this->m_site->move(dir);
-        this->m_steps_taken++;
-        this->update_last_step(dir);
-        switch(dir)
-        {
-        case 1: this->m_dx++; return;
-        case 2: this->m_dy++; return;
-        case 3: this->m_dx--; return;
-        case 4: this->m_dy--; return;
+        // if(this->m_isstuck) { return; }
+        if( this->m_site->step_is_valid(dir) )
+        { // return; }
+                this->m_site=this->m_site->move(dir);
+                this->m_steps_taken++;
+                this->update_last_step(dir);
+                switch(dir)
+                {
+                case 1: this->m_dx++; return;
+                case 2: this->m_dy++; return;
+                case 3: this->m_dx--; return;
+                case 4: this->m_dy--; return;
+                }
         }
         //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsquared << std::endl );
 }
@@ -71,9 +74,11 @@ void Tracer::step(int dir){
 // contains only logic for site blocking and trapping
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_warmup(int dir){
-        if(this->m_isstuck) { return; }
-        if(!(this->m_site->step_is_valid(dir))) { return; }
-        this->m_site = this->m_site->move(dir);
+        // if(this->m_isstuck) { return; }
+        if( this->m_site->step_is_valid(dir) ) {
+                // return; }
+                this->m_site = this->m_site->move(dir);
+        }
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_unhindered(int dir){
@@ -132,11 +137,16 @@ std::vector<long> Tracer::get_correlations(){
         return this->m_correlations;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-int Tracer::get_steps_taken()
+int Tracer::reset_steps_taken()
 {
         int tmp_steps_taken = this->m_steps_taken;
         this->m_steps_taken = 0;
         return tmp_steps_taken;
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+int Tracer::get_steps_taken()
+{
+        return this->m_steps_taken;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::stuck()

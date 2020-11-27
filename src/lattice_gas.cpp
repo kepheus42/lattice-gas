@@ -104,17 +104,17 @@ int main(int ac, char** av){
         D(std::cerr << "Done!" << std::endl);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // let the simulation run for number_of_timesteps iterations
-        int progress = 0;
         D(std::cerr << "Starting Simulation Run ..." << std::endl);
-        for(int t = 0; t < number_of_timesteps; t++)
-        {
-                if(1000*t/number_of_timesteps > progress) {
-                        progress = 1000*t/number_of_timesteps;
-                        printf("\rProgress:%6.1f",(double)progress/10.0);
-                        fflush(stdout);
-                }
-                wrapper->timestep();
-        }
+        for(int t = 0; t < number_of_timesteps; t++) { wrapper->timestep(); }
+        /*
+           int progress = 0;
+           if(1000*t/number_of_timesteps > progress) {
+                progress = 1000*t/number_of_timesteps;
+                printf("\rProgress:%6.1f",(double)progress/10.0);
+                fflush(stdout);
+           }
+         */
+
         D(std::cerr << "Done!" << std::endl);
         //printf("RUN:%f4.1\n", (double)progress_percent/10.0);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -144,7 +144,7 @@ int main(int ac, char** av){
         // for(double d : wrapper->get_result_sublattice_conc_2x2()) { std::cout << d << std::endl;}
         clock::time_point end = clock::now();
         std::chrono::duration<double> execution_time = end - start;
-        printf("\rProgress:  DONE\n");
+        // printf("\rProgress:  DONE\n");
         long n_step_attempts = (long)(number_of_timesteps+number_of_timesteps_warmup)*(number_of_tracers_1x1*step_rate_1x1+number_of_tracers_2x2*step_rate_2x2)*number_of_lattices;
         printf("Total number of step attempts: %li Time elapsed: %f\n",n_step_attempts,execution_time);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
