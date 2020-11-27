@@ -22,16 +22,16 @@ Lattice::Lattice(int grid_size,
         m_number_of_tracers_2x2(number_of_tracers_2x2),
         m_step_rate_1x1(this->m_number_of_tracers_1x1 > 0 ? step_rate_1x1 : 1.0),
         m_step_rate_2x2(this->m_number_of_tracers_2x2 > 0 ? step_rate_2x2 : 1.0),
-        m_movement_selector_length(this->m_number_of_tracers_1x1*(int)(1/this->m_step_rate_2x2)+this->m_number_of_tracers_2x2*(int)(1/this->m_step_rate_1x1)),
-        m_movement_selector(this->m_movement_selector_length,0),
         m_step_attempts_per_timestep((int)(this->m_number_of_tracers_1x1*this->m_step_rate_1x1)+(int)(this->m_number_of_tracers_2x2*this->m_step_rate_2x2)),
+        m_movement_selector_length(this->m_number_of_tracers_1x1*(int)(1/this->m_step_rate_2x2)+this->m_number_of_tracers_2x2*(int)(1/this->m_step_rate_1x1)),
+        m_movement_selector(this->m_movement_selector_length,0)
 {
         // check if there's enough space on the grid to place the tracers
         if (grid_size*grid_size < number_of_tracers_1x1 + 4*number_of_tracers_2x2)
         {
                 throw std::invalid_argument("Too many tracers for grid of the given size!");
         }
-        else if (this->number_of_tracers_2x2&&(grid_size < 3))
+        else if (this->m_number_of_tracers_2x2&&(grid_size < 3))
         {
                 throw std::invalid_argument("Grid is too small for 2x2 Tracer!");
         }
@@ -53,28 +53,28 @@ Lattice::Lattice(int grid_size,
 
 void Lattice::setup_sites(){
         D( std::cout << "Setting up sites..." << std::endl );
-        D( std::cout << "1x1: " );
+        D( std::cout << "1x1: " << std::endl );
         if(this->m_number_of_tracers_1x1) {
                 for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++) {
                         for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++) {
                                 //D( std::cout << "X: " << tmp_x << " Y: " << tmp_y << std::endl );
-                                this->m_sites_1x1.push_back(new Site_1x1(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 1));
+                                this->m_sites_1x1.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 1));
                         }
                 }
         }
-        D( std::cout << this->m_sites_1x1.size() << std::endl );
-        D( std::cout << "2x2: " );
+        D( std::cout << "Number of 1x1 sites created: " << this->m_sites_1x1.size() << std::endl );
+        D( std::cout << "2x2: " << std::endl );
         if(this->m_number_of_tracers_2x2) {
                 for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++) {
                         for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++) {
                                 //D( std::cout << "X: " << tmp_x << " Y: " << tmp_y << std::endl );
-                                this->m_sites_2x2.push_back(new Site_2x2(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 2));
+                                this->m_sites_2x2.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 2));
                         }
                 }
         }
-        D( std::cout << this->m_sites_2x2.size() << std::endl );
-        int tmp_x;
-        int tmp_y;
+        D( std::cout << "Number of 2x2 sites created: " << this->m_sites_2x2.size() << std::endl );
+        int tmp_x = 0;
+        int tmp_y = 0;
         for(Site * s : this->m_sites_1x1) {
                 tmp_x = s->get_x();
                 tmp_y = s->get_y();
@@ -224,9 +224,9 @@ void Lattice::setup_movement_selection_list()
 void Lattice::setup_tracers()
 {
         int tmp_id = 0;
-        int tmp_x;
-        int tmp_y;
-        int tmp_pos;
+        int tmp_x = 0;
+        int tmp_y = 0;
+        int tmp_pos = 0;
         Site * tmp_site;
         std::vector<int> tmp_occupied_sites(this->m_grid_size * this->m_grid_size,0);
         D( std::cout << "Starting Tracer setup" << std::endl );
@@ -390,7 +390,7 @@ std::vector<int> Lattice::get_tracer_positions()
         for(Tracer * tr : this->m_tracers)
         {
                 tmp_tracer_positions.push_back(tr->get_id());
-                tmp_tracer_positions.push_back(tr->get_size());
+                tmp_tracer_positions.push_back(tr->get_type());
                 tmp_tracer_positions.push_back(tr->get_x());
                 tmp_tracer_positions.push_back(tr->get_y());
         }
@@ -407,7 +407,7 @@ void Lattice::print_tracer_positions()
         // Prints Tracer information to std output
         for(Tracer * tr : this->m_tracers)
         {
-                std::cout << "T: " << this->m_t << " ID: " << tr->get_id() << " X: " << tr->get_x() << " Y: " << tr->get_y() << " dx: " << tr->get_dx() << " dy: " << tr->get_dy() << " l^2 " << tr->get_lsquared() << " Size: " << tr->get_size() << std::endl;
+                std::cout << "T: " << this->m_t << " ID: " << tr->get_type() << "," << tr->get_id() << " X: " << tr->get_x() << " Y: " << tr->get_y() << " dx: " << tr->get_dx() << " dy: " << tr->get_dy() << " l^2 " << tr->get_lsquared() << std::endl;
         }
 }
 

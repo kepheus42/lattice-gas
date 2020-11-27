@@ -34,8 +34,8 @@ int get_dx();
 // --- y ---
 int get_y();
 int get_dy();
-// --- size ---
-int get_size();
+// --- type ---
+int get_type();
 // --- lsquare ---
 double get_lsquared();
 // --- stuck or not stuck ---
@@ -72,11 +72,5 @@ bool m_isstuck;
 // true if tracer is caught in a trap (TODO: add trapping process to Lattice class), false if not
 // = = = = = = = = = = = = =
 };
-
-class Tracer_2x2 : public Tracer {
-public:
-Tracer_2x2(int,int);
-};
-
 
 #endif

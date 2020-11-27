@@ -41,8 +41,6 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         int number_of_lattices = atoi(av[9]);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
-        int number_of_pos_to_save = atoi(av[10]);
-        // - - - - - - - - - - - - - - - - - - - - - - - - -
         set_rng_seed(rng_seed);
         printf("X:%4d 1:%6d 2:%6d T:%8d W:%6d L:%10d\n",
                grid_size,
@@ -97,8 +95,7 @@ int main(int ac, char** av){
                                         number_of_tracers_1x1,
                                         number_of_tracers_2x2,
                                         step_rate_1x1,
-                                        step_rate_2x2,
-                                        number_of_pos_to_save);
+                                        step_rate_2x2);
         D(std::cerr << "Done!" << std::endl);
         // - - - - - - - - - - - - - - - - - - - - - - - - -
         // perform warm up if number_of_timesteps_warmup

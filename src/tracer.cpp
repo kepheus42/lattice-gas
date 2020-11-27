@@ -54,7 +54,7 @@ void Tracer::step(int dir){
         //D( std::cout << "Dir: " << dir << std::endl );
         if(this->m_isstuck) { return; }
         if(!this->m_site->step_is_valid(dir)) { return; }
-        this->m_site=this->m_site->move_to_neighbor(dir);
+        this->m_site=this->m_site->move(dir);
         this->m_steps_taken++;
         this->update_last_step(dir);
         switch(dir)
@@ -73,7 +73,7 @@ void Tracer::step(int dir){
 void Tracer::step_warmup(int dir){
         if(this->m_isstuck) { return; }
         if(!(this->m_site->step_is_valid(dir))) { return; }
-        this->m_site = this->m_site->move_to_neighbor(dir);
+        this->m_site = this->m_site->move(dir);
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_unhindered(int dir){
@@ -113,9 +113,9 @@ int Tracer::get_y()
         return this->m_site->get_y();
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-int Tracer::get_size()
+int Tracer::get_type()
 {
-        return this->m_size;
+        return this->m_type;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 double Tracer::get_lsquared()
@@ -147,11 +147,4 @@ void Tracer::stuck()
 void Tracer::unstuck()
 {
         this->m_isstuck = false;
-}
-/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-Tracer_2x2::Tracer_2x2(int id, Site * site) : Tracer(id,site)
-{
-        // change default size
-        this->m_size = 4;
-        //D( std::cout << "Creating 2x2 Tracer " << this->m_id << " at " << "(" << this->m_site->get_x() << "," << this->m_site->get_y() << ")" << std::endl );
 }

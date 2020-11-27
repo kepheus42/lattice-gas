@@ -9,7 +9,7 @@
 class Wrapper {
 public:
 
-Wrapper(int,int,int,int,int,int,double,double,int);
+Wrapper(int,int,int,int,int,int,double,double);
 
 inline int coord(int,int);
 
@@ -77,9 +77,6 @@ double m_step_rate_2x2;
 int m_data_points;
 std::vector<int> m_data_storage_intervals;
 int m_next_data_storage_interval;
-
-int m_number_of_pos_to_save;
-int m_pos_saving_interval;
 
 int m_number_of_tracers_total_times_number_of_lattices;
 int m_number_of_tracers_1x1_times_number_of_lattices;

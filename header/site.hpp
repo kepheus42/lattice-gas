@@ -22,7 +22,7 @@ int get_x();
 int get_y();
 Site * get_neighbor_by_dir(int);
 // move from one site to a neighbor, specified by dir
-Site * move_to(int);
+Site * move(int);
 // debug
 void db_print_vector(std::vector<Site *>);
 void db_print_properties();

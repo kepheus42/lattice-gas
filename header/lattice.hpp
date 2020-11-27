@@ -17,8 +17,6 @@ class Tracer_1x1;
 class Tracer_2x2;
 
 class Site;
-class Site_1x1;
-class Site_2x2;
 
 class Lattice {
 public:
@@ -65,9 +63,9 @@ int m_number_of_tracers_2x2;
 double m_step_rate_1x1;
 double m_step_rate_2x2;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<int> m_movement_selector;
-int m_movement_selector_length;
 int m_step_attempts_per_timestep;
+int m_movement_selector_length;
+std::vector<int> m_movement_selector;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // to keep track of the lattice geometry
 std::vector<Site*> m_sites_1x1;

@@ -19,8 +19,7 @@ Wrapper::Wrapper(int number_of_lattices,
                  int number_of_tracers_1x1,
                  int number_of_tracers_2x2,
                  double step_rate_1x1,
-                 double step_rate_2x2,
-                 int number_of_pos_to_save) :
+                 double step_rate_2x2) :
         // sim parameters
         m_number_of_lattices(number_of_lattices),
         m_grid_size(grid_size),
@@ -33,8 +32,6 @@ Wrapper::Wrapper(int number_of_lattices,
         m_data_points(9*(int)std::log10(number_of_timesteps)+number_of_timesteps/(int)std::pow(10,(int) std::log10(number_of_timesteps))),
         m_data_storage_intervals(this->m_data_points,0),
         m_next_data_storage_interval(0),
-        m_number_of_pos_to_save(number_of_pos_to_save),
-        m_pos_saving_interval(std::max(1,number_of_timesteps*number_of_lattices*(number_of_tracers_1x1+number_of_tracers_2x2)/number_of_pos_to_save)),
         // some auxilliary values
         m_number_of_tracers_total_times_number_of_lattices((number_of_tracers_1x1+number_of_tracers_2x2)*number_of_lattices),
         m_number_of_tracers_1x1_times_number_of_lattices(number_of_tracers_1x1 > 0 ? number_of_tracers_1x1*number_of_lattices : 1),

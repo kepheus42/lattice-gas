@@ -32,7 +32,7 @@ void Site::set_neighbor_occupancy(std::vector<std::vector<bool*> > vec){
         this->m_neighbor_occupancy = vec;
 }
 
-Site * Site::move_to(int dir){
+Site * Site::move(int dir){
         this->swap_state();
         this->m_neighbors[dir-1]->swap_state();
         return this->m_neighbors[dir-1];
