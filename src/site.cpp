@@ -16,11 +16,11 @@ Site::Site(int id, int x, int y, int t) : m_id(id), m_x(x), m_y(y), m_is_empty(t
 bool Site::step_is_valid(int dir)
 {
         int tmp = 1;
-        for(auto bp : this->m_blocking_sites_occ[dir-1]) { tmp *= (*bp); }
+        for(auto var : this->m_blocking_sites[dir-1]) { tmp *= (*var); }
         return tmp;
 }
 
-void Site::set_neighbors(std::vector<Site *> sites){
+void Site::set_neighbor_sites(std::vector<Site *> sites){
         //D( std::cout << "Site: " << this->m_id << "(" << this->m_x << "," << this->m_y << ")" << std::endl );
         //D( std::cout << "# of neighbors: "<< sites.size() << std::endl );
         //D( std::cout << "Setting neighbors to: " << std::endl );
@@ -28,17 +28,13 @@ void Site::set_neighbors(std::vector<Site *> sites){
         this->m_neighbor_sites = sites;
 }
 
-void Site::set_neighbors_occ(std::vector<bool*> vec){
-        this->m_neighbor_is_empty = vec;
-}
-
-void Site::set_blocking_sites_occ(std::vector<std::vector<bool*> > vec){
-        this->m_blocking_sites_occ = vec;
+void Site::set_blocking_sites(std::vector<std::vector<bool *> > vec){
+        this->m_blocking_sites = vec;
 }
 
 Site * Site::move(int dir){
         this->m_is_empty = true;
-        this->m_neighbor_is_empty[dir-1]->set_not_empty();
+        this->m_neighbor_sites[dir-1]->set_not_empty();
         return this->m_neighbor_sites[dir-1];
 }
 

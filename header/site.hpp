@@ -11,9 +11,8 @@ public:
 Site(int,int,int,int);
 bool step_is_valid(int);
 // to change the state of the Site
-void set_neighbors(std::vector<Site *>);
-void set_neighbors_occ(std::vector<bool*>);
-void set_blocking_sites_occ(std::vector<std::vector<bool*> >);
+void set_neighbor_sites(std::vector<Site *>);
+void set_blocking_sites(std::vector<std::vector<bool *> >);
 void swap_state();
 void set_not_empty();
 // to get the state of the Site
@@ -37,8 +36,7 @@ int m_y;
 bool m_is_empty;
 int m_type;
 std::vector<Site *> m_neighbor_sites;
-std::vector<bool *> m_neighbor_is_empty;
-std::vector< std::vector <bool*> > m_blocking_sites_occ;
+std::vector< std::vector <bool *> > m_blocking_sites;
 };
 
 #endif

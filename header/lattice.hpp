@@ -20,15 +20,24 @@ class Site;
 
 class Lattice {
 public:
-Lattice(int,int,int,double,double);
+Lattice(int,int,int,int,int,double,double);
 
 void setup_sites();
 void setup_tracers();
 void setup_movement_selection_list();
 
+void warmup();
+void evolve();
+void evolve_no_interaction();
+
+
 void timestep();
 void timestep_warmup();
 void timestep_no_interaction();
+
+void update_data();
+
+void set_rng_seed(int);
 
 inline int coord(int,int);
 inline int coord_to_x(int);
@@ -44,7 +53,14 @@ std::vector<Tracer *> get_tracers();
 std::vector<Tracer *> get_tracers_1x1();
 std::vector<Tracer *> get_tracers_2x2();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
-std::vector<int> get_tracer_positions();
+std::vector<double> get_avg_rate_1x1();
+std::vector<double> get_avg_rate_2x2();
+std::vector<double> get_avg_lsq_1x1();
+std::vector<double> get_avg_lsq_2x2();
+std::vector<double> get_avg_corr_1x1();
+std::vector<double> get_avg_corr_2x2();
+std::vector<double> get_avg_pos_corr_1x1();
+std::vector<double> get_avg_pos_corr_2x2();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 // Debugging
 // - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -55,7 +71,11 @@ void print_sites();
 // - - - - - - - - - - - - - - - - - - - - - - - - -
 private:
 // parameters of the simulation
+int m_id;
 int m_t;
+int m_w;
+int m_timesteps;
+int m_timesteps_w;
 int m_grid_size;
 int m_number_of_sites;
 int m_number_of_tracers;
@@ -69,6 +89,16 @@ int m_step_attempts_per_timestep;
 int m_movement_selector_length;
 std::vector<int> m_movement_selector;
 // - - - - - - - - - - - - - - - - - - - - - - - - -
+// handles data storage
+int m_dpoints;
+int m_dinterval;
+
+// randomness
+std::random_device m_rd; // generates the seed for m_gen
+std::mt19937 m_gen; // generates the random numbers for stepping
+std::uniform_int_distribution<int> m_random_par; // for picking a random particle
+std::uniform_int_distribution<int> m_random_dir; // for picking a random direction
+// - - - - - - - - - - - - - - - - - - - - - - - - -
 // to keep track of the lattice geometry
 std::vector<Site*> m_sites;
 std::vector<Site*> m_sites_1x1;
@@ -77,6 +107,13 @@ std::vector<Site*> m_sites_2x2;
 std::vector<Tracer*> m_tracers;
 std::vector<Tracer*> m_tracers_1x1;
 std::vector<Tracer*> m_tracers_2x2;
+// to store data
+std::vector<double> m_avg_rate_1x1;
+std::vector<double> m_avg_rate_2x2;
+std::vector<double> m_avg_lsq_1x1;
+std::vector<double> m_avg_lsq_2x2;
+std::vector<int> m_pos_1x1;
+std::vector<int> m_pos_2x2;
 };
 
 #endif

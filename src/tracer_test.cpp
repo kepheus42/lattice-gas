@@ -11,7 +11,7 @@ int main(int ac, char** av){
         // - - - - - - - - - - - - -
         Wrapper * wrapper = new Wrapper(10,10,1,0,0,1.0,1.0,1.0,25,50);
         // - - - - - - - - - - - - -
-        std::cout << "Timestep + avg lsquared of tracer populations" << std::endl;
+        std::cout << "Timestep + avg lsq of tracer populations" << std::endl;
         int exponent_counter = 0;
         while(lattice->get_t() < max_number_of_timesteps)
         {
@@ -19,9 +19,9 @@ int main(int ac, char** av){
                         exponent_counter++;
                 }
                 if(lattice->get_t()%(int)pow(10,exponent_counter) == 0) {
-                        std::cout << lattice->get_t() << "\t" << lattice->get_avg_lsquared_1x1() << "\t" << lattice->get_avg_lsquared_2x2() << "\t" << std::endl;
+                        std::cout << lattice->get_t() << "\t" << lattice->get_avg_lsq_1x1() << "\t" << lattice->get_avg_lsq_2x2() << "\t" << std::endl;
                 }
                 lattice->timestep_no_interaction();
         }
-        std::cout << lattice->get_t() << "\t" << lattice->get_avg_lsquared_1x1() << "\t" << lattice->get_avg_lsquared_2x2() << std::endl;
+        std::cout << lattice->get_t() << "\t" << lattice->get_avg_lsq_1x1() << "\t" << lattice->get_avg_lsq_2x2() << std::endl;
 }

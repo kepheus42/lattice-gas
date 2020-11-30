@@ -20,7 +20,6 @@ Tracer::Tracer(int id, int type, Site * site) :
         m_site(site),
         m_dx(0),
         m_dy(0),
-        m_lsquared(0),
         m_last_step_dir(3,0),
         m_correlations(84,0),
         m_steps_taken(0),
@@ -30,35 +29,47 @@ Tracer::Tracer(int id, int type, Site * site) :
         //D( std::cout << "Creating 1x1 Tracer " << this->m_id << " at " << "(" << this->m_site->get_x() << "," << this->m_site->get_y() << ")" << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-inline void Tracer::update_last_step(int last_step_dir)
+inline
+void Tracer::update_last_step(int last_step_dir)
 {
         // shift m_last_step_dir by one position
         std::rotate(this->m_last_step_dir.rbegin(),this->m_last_step_dir.rbegin()+1,this->m_last_step_dir.rend());
         // overwrite the move that's now at pos 0 with the most recent one
+        // this->m_last_step_dir[2] = this->m_last_step_dir[1];
+        // this->m_last_step_dir[1] = this->m_last_step_dir[0];
         this->m_last_step_dir[0] = last_step_dir;
+        // this->m_last_sequence = last_step_dir;
+        // this->m_correlations[] += 1;
+        // this->m_correlations[] += 1;
+        int tmp_n = 1;
         int tmp_idx = 0;
-        int tmp_n = 0;
+        /* */
         for(int step : this->m_last_step_dir)
         {
-                if(!step) { break; }
-                tmp_idx += (int)std::pow(4,tmp_n)*step;
-                this->m_correlations[tmp_idx-1]++;
-                tmp_n++;
+                tmp_idx += tmp_n*step;
+                tmp_n *= 4;
+                this->m_correlations[tmp_idx-1] += !!step; // adding "not not step" results in incrementation, but only if step is not zero
         }
+        /* */
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // function for random walk stepping
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step(int dir){
+        D( std::cout << this->m_id << " -> " << dir << std::endl );
         //D( std::cout << "STEP!" << std::endl );
-        //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsquared << std::endl );
-        //D( std::cout << "Dir: " << dir << std::endl );
+        //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsq << std::endl );
+        D( std::cout << "Dir: " << dir << std::endl );
         // if(this->m_isstuck) { return; }
         if( this->m_site->step_is_valid(dir) )
         { // return; }
                 this->m_site=this->m_site->move(dir);
                 this->m_steps_taken++;
                 this->update_last_step(dir);
+                // Try:
+                // this->m_dx -= (dir-2)%2;
+                // this->m_dy -= (dir-3)%2;
+                //
                 switch(dir)
                 {
                 case 1: this->m_dx++; return;
@@ -67,7 +78,7 @@ void Tracer::step(int dir){
                 case 4: this->m_dy--; return;
                 }
         }
-        //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsquared << std::endl );
+        //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsq << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // Function for steps during warm_up
@@ -98,6 +109,11 @@ int Tracer::get_id()
         return this->m_id;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+int Tracer::get_pos()
+{
+        return this->m_site->get_id();
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 int Tracer::get_dx()
 {
         return this->m_dx;
@@ -123,9 +139,9 @@ int Tracer::get_type()
         return this->m_type;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-double Tracer::get_lsquared()
+unsigned long long Tracer::get_lsq()
 {
-        return (double)(this->m_dx*this->m_dx)+(double)(this->m_dy*this->m_dy);
+        return (unsigned long long)((this->m_dx*this->m_dx)+(this->m_dy*this->m_dy));
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 bool Tracer::get_isstuck()
@@ -133,18 +149,18 @@ bool Tracer::get_isstuck()
         return this->m_isstuck;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<long> Tracer::get_correlations(){
+std::vector<unsigned long long> Tracer::get_correlations(){
         return this->m_correlations;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-int Tracer::reset_steps_taken()
+unsigned long long Tracer::get_steps_taken()
 {
-        int tmp_steps_taken = this->m_steps_taken;
+        unsigned long long tmp_steps_taken = this->m_steps_taken;
         this->m_steps_taken = 0;
         return tmp_steps_taken;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-int Tracer::get_steps_taken()
+unsigned long long Tracer::get_steps_taken_total()
 {
         return this->m_steps_taken;
 }

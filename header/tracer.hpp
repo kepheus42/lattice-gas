@@ -18,7 +18,7 @@ void step(int);
 void step_warmup(int);
 void step_unhindered(int);
 //
-inline void update_last_step(int);
+void update_last_step(int);
 //
 // change mobility state of tracer
 void stuck();
@@ -27,7 +27,7 @@ void unstuck();
 // --- id --
 int get_id();
 //
-int get_position();
+int get_pos();
 // --- x ---
 int get_x();
 int get_dx();
@@ -37,16 +37,16 @@ int get_dy();
 // --- type ---
 int get_type();
 // --- lsquare ---
-double get_lsquared();
+unsigned long long get_lsq();
 // --- stuck or not stuck ---
 bool get_isstuck();
 //
-int reset_steps_taken();
-int get_steps_taken();
+unsigned long long get_steps_taken();
+unsigned long long get_steps_taken_total();
 //
 bool get_last_step();
 //
-std::vector<long> get_correlations();
+std::vector<unsigned long long> get_correlations();
 //
 
 protected:
@@ -56,14 +56,13 @@ int m_type;
 Site* m_site;
 int m_dx;
 int m_dy;
-double m_lsquared;
 // = = = = = = = = = = = = =
 std::vector<int> m_last_step_dir;
 // Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.
 // This is used to compute the conditional likelyhoods for all possible step sequences with length up to N.
 // std::vector<int> m_last_step_idx;
 // This vector of length m_last_step_dir.size() contains the indices of the last 1-N-step sequences
-std::vector<long> m_correlations;
+std::vector<unsigned long long> m_correlations;
 // = = = = = = = = = = = = =
 //int m_steps_taken;
 int m_steps_taken;
