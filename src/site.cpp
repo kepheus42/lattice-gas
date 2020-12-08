@@ -13,11 +13,18 @@ Site::Site(int id, int x, int y, int t) : m_id(id), m_x(x), m_y(y), m_is_empty(t
         D(std::cout << "Creating site: " << id << " at " << x << "," << y << std::endl);
 }
 
-bool Site::step_is_valid(int dir)
-{
+bool Site::step_is_valid(int dir){
         int tmp = 1;
         for(auto var : this->m_blocking_sites[dir-1]) { tmp *= (*var); }
         return tmp;
+}
+
+bool Site::blocking_site_state(int dir, int which){
+        return *(this->m_blocking_sites[dir][which]);
+}
+
+std::vector<std::vector<bool * > > Site::get_blocking_sites(){
+        return this->m_blocking_sites;
 }
 
 void Site::set_neighbor_sites(std::vector<Site *> sites){

@@ -1,4 +1,4 @@
-#include "global.hpp"
+
 #include "tracer.hpp"
 #include "output.hpp"
 #include <iostream>

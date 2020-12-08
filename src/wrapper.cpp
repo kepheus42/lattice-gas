@@ -6,13 +6,10 @@
 #else
 #define D(x) do {} while(0)
 #endif
-// To add debugging messages, use D(std::cerr << "Debugging message 1 2 3!" << std::endl; )
 
-// - - - - - - - - - - - - - - - - - - - - - - - -
-// S I M U L A T I O N W R A P P E R
-// to store multiple lattices and perform mc simulations simultaneously
-// - - - - - - - - - - - - - - - - - - - - - - - -
-Wrapper::Wrapper(int number_of_lattices,
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+Wrapper::Wrapper(int rng_seed,
+                 int number_of_lattices,
                  int grid_size,
                  int number_of_timesteps,
                  int number_of_timesteps_w,
@@ -29,7 +26,9 @@ Wrapper::Wrapper(int number_of_lattices,
         m_number_of_tracers_2x2(number_of_tracers_2x2),
         m_step_rate_1x1(step_rate_1x1),
         m_step_rate_2x2(step_rate_2x2),
-        m_dpoints(this->m_timesteps ? 9*(int)std::log10(this->m_timesteps)+this->m_timesteps/(int)std::pow(10,(int) std::log10(this->m_timesteps)) : 0) //
+        m_dpoints(this->m_timesteps ? 9*(int)std::log10(this->m_timesteps)+this->m_timesteps/(int)std::pow(10,(int) std::log10(this->m_timesteps)) : 0),
+        m_rng(rng_seed),
+        m_one_over_n_lattices(1/(double)this->m_number_of_lattices)
 {
         this->m_lattices.reserve(this->m_number_of_lattices);
         // this->m_tracers.reserve(this->m_number_of_tracers_total_times_number_of_lattices);
@@ -37,65 +36,83 @@ Wrapper::Wrapper(int number_of_lattices,
         // this->m_tracers_2x2.reserve(this->m_number_of_tracers_2x2_times_number_of_lattices);
         //D( std::cout << "Wrapper: " << this->m_number_of_tracers_1x1_times_number_of_lattices << " " << this->m_number_of_tracers_2x2_times_number_of_lattices << std::endl );
         //
+
         while(this->m_lattices.size() < m_number_of_lattices) {
+                // #pragma omp parallel
                 this->m_lattices.push_back(new Lattice(this->m_timesteps,
                                                        this->m_timesteps_w,
                                                        this->m_grid_size,
                                                        this->m_number_of_tracers_1x1,
                                                        this->m_number_of_tracers_2x2,
                                                        this->m_step_rate_1x1,
-                                                       this->m_step_rate_2x2));
+                                                       this->m_step_rate_2x2,
+                                                       &(this->m_rng)));
+
         }
 }
-
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Wrapper::warmup(){
         D( std::cerr << "Starting Warmup..." << std::endl );
+        // single thread serial
         for(Lattice * l : this->m_lattices) { l->warmup(); }
+        // #pragma omp parallel for
+        // for(auto it = this->m_lattices.begin(); it < this->m_lattices.end(); it++) {
+        //         #pragma omp task
+        //         {
+        //                 (*it)->warmup();
+        //         }
+        // }
+        // //
         D( std::cerr << "Done!" << std::endl );
 }
-
 void Wrapper::evolve(){
         D( std::cerr << "Starting Evolution..." << std::endl );
+        // single thread serial
         for(Lattice * l : this->m_lattices) { l->evolve(); }
+        // parallelize with omp
+        // #pragma omp parallel for shared(this->m_rng)
+        // for(auto it = this->m_lattices.begin(); it < this->m_lattices.end(); it++) {
+        //         #pragma omp task
+        //         {
+        //                 (*it)->evolve();
+        //         }
+        //
+        // }
+        // //
         D( std::cerr << "Done!" << std::endl );
 }
-
 void Wrapper::evolve_no_interaction(){
         D( std::cerr << "Starting Evolution (no_interaction)..." << std::endl );
-        for(Lattice * l : this->m_lattices) { l->evolve_no_interaction(); }
+        // #pragma omp parallel for
+        // for(auto it = this->m_lattices.begin(); it < this->m_lattices.end(); it++) {
+        //         (*it)->evolve_no_interaction();
+        // }
+        // // for(Lattice * l : this->m_lattices) { l->evolve_no_interaction(); }
         D( std::cerr << "Done!" << std::endl );
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
-// Get Simulation Results:
-// = = = = = = = = = = = = = = = = = = = = = = = = =
-// avg_lsq(t) for t = [0,...,m_timesteps]
-// = = = = = = = = = = = = = = = = = = = = = = = = =
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> Wrapper::get_result_lsq_1x1(){
         D( std::cout << "  Wrapper::get_result_lsq_1x1() ");
         std::vector<double> tmp_avg_lsq(this->m_dpoints,0.0);
         for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current_avg_lsq = l->get_avg_lsq_1x1();
-                std::transform(tmp_current_avg_lsq.begin(),tmp_current_avg_lsq.end(),tmp_avg_lsq.begin(),tmp_avg_lsq.begin(),std::plus<>());
+                std::vector<double> tmp_current = l->get_avg_lsq_1x1();
+                std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),tmp_current.begin(),tmp_avg_lsq.begin(),std::plus<double>());
         }
         std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),tmp_avg_lsq.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
         D( std::cout << "Done!" << std::endl );
         return tmp_avg_lsq;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> Wrapper::get_result_lsq_2x2(){
         D( std::cout << "  Wrapper::get_result_lsq_2x2() ");
         std::vector<double> tmp_avg_lsq(this->m_dpoints,0.0);
         for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current_avg_lsq = l->get_avg_lsq_2x2();
-                std::transform(tmp_current_avg_lsq.begin(),tmp_current_avg_lsq.end(),tmp_avg_lsq.begin(),tmp_avg_lsq.begin(),std::plus<double>());
+                std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),l->get_avg_lsq_2x2().begin(),tmp_avg_lsq.begin(),std::plus<double>());
         }
         std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),tmp_avg_lsq.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
         D( std::cout << "Done!" << std::endl );
         return tmp_avg_lsq;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
-// avg_rate(t) for t = [0,...,m_timesteps]
-// = = = = = = = = = = = = = = = = = = = = = = = = =
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> Wrapper::get_result_rate_1x1(){
         D( std::cout << "  Wrapper::get_result_rate_1x1() ");
         std::vector<double> tmp_avg_rate(this->m_dpoints,0.0);
@@ -107,10 +124,9 @@ std::vector<double> Wrapper::get_result_rate_1x1(){
         D( std::cout << "Done!" << std::endl );
         return tmp_avg_rate;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
 std::vector<double> Wrapper::get_result_rate_2x2(){
         D( std::cout << "  Wrapper::get_result_rate_2x2() ");
-        std::vector<double> tmp_avg_rate(this->m_dpoints,0.0);
+        std::vector<double> tmp_avg_rate(this->m_dpoints,0);
         for(Lattice * l : this->m_lattices) {
                 std::vector<double> tmp_current_avg_rate = l->get_avg_rate_2x2();
                 std::transform(tmp_current_avg_rate.begin(),tmp_current_avg_rate.end(),tmp_avg_rate.begin(),tmp_avg_rate.begin(),std::plus<double>());
@@ -119,42 +135,61 @@ std::vector<double> Wrapper::get_result_rate_2x2(){
         D( std::cout << "Done!" << std::endl );
         return tmp_avg_rate;
 }
-// = = = = = = = = = = = = = = = = = = = = = = = = =
-/*
-
-   std::vector<unsigned long long> Wrapper::get_result_correlations_1x1(){
-        std::vector<unsigned long> tmp_corr(84,0);
-        for(Tracer * tr : this->m_tracers_1x1) {
-                std::transform(tmp_corr.begin(),tmp_corr.end(),tr->get_correlations().begin()+1,tmp_corr.begin(),std::plus<>{});
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<double> Wrapper::get_result_step_corr_1x1(){
+        std::vector<double> tmp_corr(84,0);
+        double tmp_norm = 1/(double)this->m_number_of_lattices;
+        for(Lattice * l : this->m_lattices) {
+                std::transform(tmp_corr.begin(),tmp_corr.end(),l->get_avg_corr_1x1().begin(),tmp_corr.begin(),std::plus<>{});
         }
+        std::transform(tmp_corr.begin(),tmp_corr.end(),tmp_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm));
         return tmp_corr;
-   }
-   std::vector<unsigned long long> Wrapper::get_result_correlations_2x2(){
-        std::vector<unsigned long> tmp_corr(84,0);
-        for(Tracer * tr : this->m_tracers_2x2) {
-                std::transform(tmp_corr.begin(),tmp_corr.end(),tr->get_correlations().begin()+1,tmp_corr.begin(),std::plus<>{});
+}
+std::vector<double> Wrapper::get_result_step_corr_2x2(){
+        std::vector<double> tmp_corr(84,0);
+        double tmp_norm = 1/(double)this->m_number_of_lattices;
+        for(Lattice * l : this->m_lattices) {
+                std::transform(tmp_corr.begin(),tmp_corr.end(),l->get_avg_corr_2x2().begin(),tmp_corr.begin(),std::plus<>{});
         }
-
-
-
+        std::transform(tmp_corr.begin(),tmp_corr.end(),tmp_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm));
         return tmp_corr;
-   }
-   // = = = = = = = = = = = = = = = = = = = = = = = = =
-   std::vector<int> Wrapper::get_result_positions_1x1(){
-        return this->m_positions_1x1;
-   }
-   std::vector<int> Wrapper::get_result_positions_2x2(){
-        return this->m_positions_2x2;
-   }
-   // = = = = = = = = = = = = = = = = = = = = = = = = =
-   // TODO: write functions to return the normalized [0.0-1.0], sum=1.0 version of the correlations
-   // TODO: Note that this requires a different normalization constant per n-step correlation
-   std::vector<double> Wrapper::get_result_norm_correlations_1x1(){
-        std::vector<double> tmp_corr(this->m_correlations_1x1.size()-1,0.0);
-        return tmp_corr;
-   }
-   std::vector<double> Wrapper::get_result_norm_correlations_2x2(){
-        std::vector<double> tmp_corr(this->m_correlations_2x2.size()-1,0.0);
-        return tmp_corr;
-   }
- */
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<double> Wrapper::get_result_site_corr_1x1(){
+        std::vector<double> tmp_site_corr(this->m_lattices[0]->get_avg_pos_corr_1x1().size(),0);
+        for(Lattice * l : this->m_lattices) {
+                std::transform(tmp_site_corr.begin(),tmp_site_corr.end(),l->get_avg_pos_corr_1x1().begin(),tmp_site_corr.begin(),std::plus<>{});
+        }
+        std::transform(tmp_site_corr.begin(),tmp_site_corr.end(),tmp_site_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, this->m_one_over_n_lattices));
+        return tmp_site_corr;
+}
+std::vector<double> Wrapper::get_result_site_corr_2x2(){
+        std::vector<double> tmp_site_corr(this->m_lattices[0]->get_avg_pos_corr_2x2().size(),0);
+        for(Lattice * l : this->m_lattices) {
+                std::transform(tmp_site_corr.begin(),tmp_site_corr.end(),l->get_avg_pos_corr_2x2().begin(),tmp_site_corr.begin(),std::plus<>{});
+        }
+        std::transform(tmp_site_corr.begin(),tmp_site_corr.end(),tmp_site_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, this->m_one_over_n_lattices));
+        return tmp_site_corr;
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<int> Wrapper::get_result_pos_1x1(){
+        std::vector<int> tmp_pos;
+        tmp_pos.reserve(this->m_number_of_lattices * this->m_number_of_tracers_1x1 * this->m_dpoints);
+        for(Lattice * l : this->m_lattices) {
+                for(int pos : l->get_pos_1x1()) {
+                        tmp_pos.push_back(pos);
+                }
+        }
+        return tmp_pos;
+}
+std::vector<int> Wrapper::get_result_pos_2x2(){
+        std::vector<int> tmp_pos;
+        tmp_pos.reserve(this->m_number_of_lattices * this->m_number_of_tracers_1x1 * this->m_dpoints);
+        for(Lattice * l : this->m_lattices) {
+                for(int pos : l->get_pos_2x2()) {
+                        tmp_pos.push_back(pos);
+                }
+        }
+        return tmp_pos;
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */

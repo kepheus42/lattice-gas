@@ -5,6 +5,7 @@
 #include <chrono>
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 #include <cmath>
 #include "site.hpp"
 
@@ -24,29 +25,28 @@ void update_last_step(int);
 void stuck();
 void unstuck();
 // property getters
-// --- id --
+// identifier
 int get_id();
-//
+// position
 int get_pos();
-// --- x ---
 int get_x();
-int get_dx();
-// --- y ---
 int get_y();
-int get_dy();
-// --- type ---
+// displacement
+long get_dx();
+long get_dy();
+// type
 int get_type();
-// --- lsquare ---
-unsigned long long get_lsq();
-// --- stuck or not stuck ---
+// lsq
+double get_lsq();
+// not/stuck
 bool get_isstuck();
 //
 unsigned long long get_steps_taken();
-unsigned long long get_steps_taken_total();
 //
-bool get_last_step();
+int get_pos_corr(int);
 //
-std::vector<unsigned long long> get_correlations();
+std::vector<long> get_correlations();
+std::vector<std::vector<bool*> > get_blocking_sites();
 //
 
 protected:
@@ -54,18 +54,18 @@ protected:
 int m_id;
 int m_type;
 Site* m_site;
-int m_dx;
-int m_dy;
+// int m_dx;
+// int m_dy;
 // = = = = = = = = = = = = =
 std::vector<int> m_last_step_dir;
 // Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.
 // This is used to compute the conditional likelyhoods for all possible step sequences with length up to N.
 // std::vector<int> m_last_step_idx;
 // This vector of length m_last_step_dir.size() contains the indices of the last 1-N-step sequences
-std::vector<unsigned long long> m_correlations;
+std::vector<long> m_correlations;
 // = = = = = = = = = = = = =
 //int m_steps_taken;
-int m_steps_taken;
+// int m_steps_taken;
 // Total number of steps taken, gives actual step rate when divided by number of timesteps.
 // = = = = = = = = = = = = =
 bool m_isstuck;

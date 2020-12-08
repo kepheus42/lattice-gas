@@ -4,7 +4,7 @@ build/
 lattice_gas.dSYM
 lattice_gas
 msd_*
-corr_*
-rate_*
+cor_*
+rat_*
 pos_*
 perf_test.sh

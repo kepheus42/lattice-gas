@@ -1,19 +1,17 @@
 IDIR=./header
 LDIR=/usr/local/lib
-CC=g++
-CFLAGS=-I$(IDIR) -L$(LDIR) -lm -lboost_filesystem -lboost_system -std=c++17 -Wall -Ofast
-PFLAGS=-I$(IDIR) -L$(LDIR) -lm -lboost_filesystem -lboost_system -std=c++17 -Wall -Wpedantic -g
-DBFLAGS=-I$(IDIR) -L$(LDIR) -lm -lboost_filesystem -lboost_system -std=c++17 -Wall -Wpedantic -g -DDEBUG
+CC=clang++
+# -lboost_filesystem -lboost_system
+#-fopenmp
+CFLAGS=-I$(IDIR) -L$(LDIR) -Xpreprocessor -fopenmp -lm -std=c++17 -Wall -O3
+DBFLAGS=-I$(IDIR) -L$(LDIR) -Xpreprocessor -fopenmp -lm -std=c++17 -Wall -Wpedantic -g -DDEBUG
 
-SRC = ./src/tracer.cpp ./src/lattice.cpp ./src/site.cpp ./src/wrapper.cpp ./src/global.cpp
+SRC = ./src/tracer.cpp ./src/lattice.cpp ./src/site.cpp ./src/wrapper.cpp
 
 $(info $$SRC is [${SRC}])
 
 debug : ./src/lattice_gas.cpp $(SRC)
-	$(CC) $(DBFLAGS) $^ -o lattice_gas
+	$(CC) $(DBFLAGS) $^ -o lattice_gas -lomp
 
 build : ./src/lattice_gas.cpp $(SRC)
-	$(CC) $(CFLAGS) $^ -o lattice_gas
-
-profile : ./src/lattice_gas.cpp $(SRC)
-	$(CC) $(PFLAGS) $^ -o lattice_gas
+	$(CC) $(CFLAGS) $^ -o lattice_gas -lomp

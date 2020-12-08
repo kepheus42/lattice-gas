@@ -1,7 +1,7 @@
 #ifndef SITE_H
 #define SITE_H
 
-#include "global.hpp"
+
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -10,6 +10,9 @@ class Site {
 public:
 Site(int,int,int,int);
 bool step_is_valid(int);
+bool blocking_site_state(int,int);
+std::vector<unsigned int> blocking_site_corr();
+std::vector<std::vector<bool *> > get_blocking_sites();
 // to change the state of the Site
 void set_neighbor_sites(std::vector<Site *>);
 void set_blocking_sites(std::vector<std::vector<bool *> >);
