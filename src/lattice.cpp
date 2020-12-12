@@ -66,8 +66,8 @@ Lattice::Lattice(int timesteps,
         this->m_avg_lsq_1x1.reserve(this->m_dpoints);
         this->m_avg_lsq_2x2.reserve(this->m_dpoints);
 
-        this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? this->m_number_of_tracers_1x1 * this->m_dpoints : 0);
-        this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? this->m_number_of_tracers_2x2 * this->m_dpoints : 0);
+        this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? this->m_number_of_tracers_1x1 * (this->m_dpoints+1) : 0);
+        this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? this->m_number_of_tracers_2x2 * (this->m_dpoints+1) : 0);
 
         this->m_site_corr_1x1.reserve(this->m_number_of_tracers_2x2 ?  4*this->m_dpoints : 1*this->m_dpoints );
         this->m_site_corr_2x2.reserve(this->m_number_of_tracers_1x1 ?  9*this->m_dpoints : 3*this->m_dpoints );
@@ -307,16 +307,18 @@ void Lattice::setup_tracers(){
                 for (int n = 0; n < this->m_number_of_tracers_2x2; n++)
                 {
                         tmp_pos = tmp_start_positions_2x2[n];
+                        tmp_x = this->coord_to_x(tmp_pos);
+                        tmp_y = this->coord_to_y(tmp_pos);
                         tmp_site = this->m_sites_2x2[tmp_pos];
                         // create new tracer at starting site
                         this->m_tracers.push_back(new Tracer(tmp_id,2,tmp_site));
                         this->m_tracers_2x2.push_back(this->m_tracers.back());
                         // increment id counter,
                         tmp_id++;
-                        tmp_occupied_sites[coord(tmp_x+0,tmp_y+0)] = 1;
-                        tmp_occupied_sites[coord(tmp_x+1,tmp_y+0)] = 1;
-                        tmp_occupied_sites[coord(tmp_x+0,tmp_y+1)] = 1;
-                        tmp_occupied_sites[coord(tmp_x+1,tmp_y+1)] = 1;
+                        tmp_occupied_sites[this->coord(tmp_x+0,tmp_y+0)] = 1;
+                        tmp_occupied_sites[this->coord(tmp_x+1,tmp_y+0)] = 1;
+                        tmp_occupied_sites[this->coord(tmp_x+0,tmp_y+1)] = 1;
+                        tmp_occupied_sites[this->coord(tmp_x+1,tmp_y+1)] = 1;
                 }
                 //D( std::cout << "occupied sites after 2x2 setup: " << std::endl );
                 //D( this->print_vector(tmp_occupied_sites) );
@@ -353,6 +355,8 @@ void Lattice::setup_tracers(){
                 }
                 //D( std::cout << "Number of Tracers 1x1: " << this->m_tracers_1x1.size() << std::endl);
         }
+        for(Tracer * tr : this->m_tracers_1x1) { this->m_pos_1x1.push_back(tr->get_pos()); }
+        for(Tracer * tr : this->m_tracers_2x2) { this->m_pos_2x2.push_back(tr->get_pos()); }
         //D( std::cout << "Number of Tracers: " << this->m_tracers.size() << std::endl);
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
