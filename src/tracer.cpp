@@ -18,6 +18,8 @@ Tracer::Tracer(int id, int type, Site * site) :
         m_id(id),
         m_type(type),
         m_site(site),
+        // m_steps_taken(0),
+        m_powers_of_four({1,4,16}),
         m_last_step_dir(3,0),
         m_correlations(84,0),
         m_isstuck(false)
@@ -26,6 +28,7 @@ Tracer::Tracer(int id, int type, Site * site) :
         //D( std::cout << "Creating 1x1 Tracer " << this->m_id << " at " << "(" << this->m_site->get_x() << "," << this->m_site->get_y() << ")" << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+// try: inlining
 // inline
 void Tracer::update_last_step(int last_step_dir)
 {
@@ -33,19 +36,20 @@ void Tracer::update_last_step(int last_step_dir)
         std::rotate(this->m_last_step_dir.rbegin(),this->m_last_step_dir.rbegin()+1,this->m_last_step_dir.rend());
         // overwrite the move that's now at pos 0 with the most recent one
         this->m_last_step_dir[0] = last_step_dir;
+        // temporary variables for sorting the resulting step sequences into the counting vector
         int tmp_n = 1;
         int tmp_idx = 0;
-        /* */
+        /*
+           TODO: rewrite with STL function
+
+         */
+        // std::accumulate(this->m_last_step_dir.begin(),this->m_last_step_dir.end(),this->m_powers_of_four.begin(),0,[](int dir, int pow) -> int { })
         for(int step : this->m_last_step_dir)
         {
                 tmp_idx += tmp_n*step;
-                tmp_n *= 4;
+                tmp_n   *= 4;
                 this->m_correlations[tmp_idx-1] += !!step; // adding "not not step" results in incrementation, but only if step is not zero
         }
-        /*
-           this gives:
-
-         */
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // function for random walk stepping
@@ -56,25 +60,27 @@ void Tracer::step(int dir){
         //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsq << std::endl );
         D( std::cout << "Dir: " << dir << std::endl );
         // if(this->m_isstuck) { return; }
-        if( this->m_site->step_is_valid(dir) ) {
-                this->m_site=this->m_site->move(dir);
+        if( this->m_site->step_is_valid(dir) )
+        {
+                // this->m_steps_taken++;
+                this->m_site = this->m_site->jump_in_direction(dir);
                 this->update_last_step(dir);
         }
         //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsq << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // Function for steps during warm_up
-// contains only logic for site blocking and trapping
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_warmup(int dir){
         // if(this->m_isstuck) { return; }
         if( this->m_site->step_is_valid(dir) ) {
                 // return; }
-                this->m_site = this->m_site->move(dir);
+                this->m_site = this->m_site->jump_in_direction(dir);
         }
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_unhindered(int dir){
+        // this->m_steps_taken++;
         this->update_last_step(dir);
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -133,9 +139,16 @@ std::vector<std::vector<bool*> > Tracer::get_blocking_sites(){
         return this->m_site->get_blocking_sites();
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-unsigned long long Tracer::get_steps_taken()
+//unsigned long long
+double Tracer::get_steps_taken()
 {
-        return std::accumulate(this->m_correlations.begin(),this->m_correlations.begin()+4,0);
+        // return (double)this->m_steps_taken;
+        return (double)std::accumulate(this->m_correlations.begin(),this->m_correlations.begin()+4,0);
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<int> Tracer::get_site_correlation()
+{
+        return this->m_site->get_site_correlation();
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::stuck()

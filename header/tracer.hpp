@@ -41,7 +41,10 @@ double get_lsq();
 // not/stuck
 bool get_isstuck();
 //
-unsigned long long get_steps_taken();
+//unsigned long long
+double get_steps_taken();
+//
+std::vector<int> get_site_correlation();
 //
 int get_pos_corr(int);
 //
@@ -54,9 +57,11 @@ protected:
 int m_id;
 int m_type;
 Site* m_site;
+// unsigned long m_steps_taken;
 // int m_dx;
 // int m_dy;
 // = = = = = = = = = = = = =
+std::vector<int> m_powers_of_four;
 std::vector<int> m_last_step_dir;
 // Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.
 // This is used to compute the conditional likelyhoods for all possible step sequences with length up to N.

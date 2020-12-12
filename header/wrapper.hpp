@@ -50,6 +50,9 @@ void update_positions_2x2();
 std::vector<double> get_result_rate_1x1();
 std::vector<double> get_result_rate_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<double> get_result_diff_1x1();
+std::vector<double> get_result_diff_2x2();
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> get_result_lsq_1x1();
 std::vector<double> get_result_lsq_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -86,8 +89,8 @@ int m_number_of_tracers_2x2;
 double m_step_rate_1x1;
 double m_step_rate_2x2;
 int m_dpoints;
-std::mt19937 m_rng; // shared rng for all lattices
 double m_one_over_n_lattices;
+std::random_device m_rd;
 /*
    // handles data storage
    int m_data_points;

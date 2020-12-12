@@ -19,7 +19,7 @@ class Site;
 
 class Lattice {
 public:
-Lattice(int,int,int,int,int,double,double,std::mt19937*);
+Lattice(int,int,int,int,int,double,double,unsigned int);
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void setup_sites();
 void setup_tracers();
@@ -53,12 +53,16 @@ std::vector<Tracer *> get_tracers_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> get_avg_rate_1x1();
 std::vector<double> get_avg_rate_2x2();
+
+std::vector<double> get_avg_diff_1x1();
+std::vector<double> get_avg_diff_2x2();
+
 std::vector<double> get_avg_lsq_1x1();
 std::vector<double> get_avg_lsq_2x2();
 std::vector<double> get_avg_corr_1x1();
 std::vector<double> get_avg_corr_2x2();
-std::vector<double> get_avg_pos_corr_1x1();
-std::vector<double> get_avg_pos_corr_2x2();
+std::vector<double> get_site_corr_1x1();
+std::vector<double> get_site_corr_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<int> get_pos_1x1();
 std::vector<int> get_pos_2x2();
@@ -96,7 +100,7 @@ std::vector<int> m_movement_selector;
 int m_dpoints;
 int m_dinterval;
 // randomness
-std::mt19937 * m_rng; // generates the random numbers for stepping
+std::mt19937 m_rng; // generates the random numbers for stepping
 std::uniform_int_distribution<int> m_random_par; // for picking a random particle
 std::uniform_int_distribution<int> m_random_dir; // for picking a random direction
 // pre computed values
@@ -116,10 +120,17 @@ std::vector<Tracer*> m_tracers_2x2;
 // to store data
 std::vector<double> m_avg_rate_1x1;
 std::vector<double> m_avg_rate_2x2;
+std::vector<double> m_avg_diff_1x1;
+std::vector<double> m_avg_diff_2x2;
 std::vector<double> m_avg_lsq_1x1;
 std::vector<double> m_avg_lsq_2x2;
+std::vector<double> m_site_corr_1x1;
+std::vector<double> m_site_corr_2x2;
 std::vector<int> m_pos_1x1;
 std::vector<int> m_pos_2x2;
+
+std::vector<int> m_site_corr_1x1_counter;
+std::vector<int> m_site_corr_2x2_counter;
 };
 
 #endif

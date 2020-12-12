@@ -14,7 +14,7 @@ Lattice::Lattice(int timesteps,
                  int number_of_tracers_2x2,
                  double step_rate_1x1,
                  double step_rate_2x2,
-                 std::mt19937* rng) :
+                 unsigned int rng_seed) :
         m_t(0),
         m_w(0),
         m_timesteps(timesteps),
@@ -34,7 +34,7 @@ Lattice::Lattice(int timesteps,
         m_dpoints(this->m_timesteps ? 9*(int)std::log10(this->m_timesteps)+this->m_timesteps/(int)std::pow(10,(int) std::log10(this->m_timesteps)) : 0),
         m_dinterval(0),
 
-        m_rng(rng),
+        m_rng(rng_seed),
         m_random_par(0,this->m_movement_selector_length-1),
         m_random_dir(1,4),
         // precompute these:
@@ -59,10 +59,22 @@ Lattice::Lattice(int timesteps,
         //
         this->m_avg_rate_1x1.reserve(this->m_dpoints);
         this->m_avg_rate_2x2.reserve(this->m_dpoints);
+
+        this->m_avg_diff_1x1.reserve(this->m_dpoints);
+        this->m_avg_diff_2x2.reserve(this->m_dpoints);
+
         this->m_avg_lsq_1x1.reserve(this->m_dpoints);
         this->m_avg_lsq_2x2.reserve(this->m_dpoints);
+
         this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? this->m_number_of_tracers_1x1 * this->m_dpoints : 0);
         this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? this->m_number_of_tracers_2x2 * this->m_dpoints : 0);
+
+        this->m_site_corr_1x1.reserve(this->m_number_of_tracers_2x2 ?  4*this->m_dpoints : 1*this->m_dpoints );
+        this->m_site_corr_2x2.reserve(this->m_number_of_tracers_1x1 ?  9*this->m_dpoints : 3*this->m_dpoints );
+
+        this->m_site_corr_1x1_counter.reserve(this->m_number_of_tracers_1x1 ?  4*this->m_number_of_tracers_1x1*this->m_dpoints : 0 );
+        this->m_site_corr_2x2_counter.reserve(this->m_number_of_tracers_2x2 ?  4*this->m_number_of_tracers_2x2*this->m_dpoints : 0 );
+
         // only allocate memory for sites if the respective tracer species is present
         this->m_sites_1x1.reserve(this->m_number_of_tracers_1x1 > 0 ? this->m_number_of_sites : 0);
         this->m_sites_2x2.reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites : 0);
@@ -86,12 +98,12 @@ void Lattice::setup_sites(){
         D( std::cout << "1x1: " << std::endl );
         if(this->m_number_of_tracers_1x1)
         {
-                for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
+                for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
                 {
-                        for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
+                        for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
                         {
-                                //D( std::cout << "X: " << tmp_x << " Y: " << tmp_y << std::endl );
-                                this->m_sites.push_back(new Site(this->coord(tmp_y,tmp_x), tmp_x, tmp_y, 1));
+                                //D( std::cout << "X: " << tmp_y << " Y: " << tmp_x << std::endl );
+                                this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 1));
                                 this->m_sites_1x1.push_back(this->m_sites.back());
                         }
                 }
@@ -101,122 +113,121 @@ void Lattice::setup_sites(){
         D( std::cout << "2x2: " << std::endl );
         if(this->m_number_of_tracers_2x2)
         {
-                for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
+                for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
                 {
-                        for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
+                        for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
                         {
-                                //D( std::cout << "X: " << tmp_x << " Y: " << tmp_y << std::endl );
-                                this->m_sites.push_back(new Site(this->coord(tmp_y,tmp_x), tmp_x, tmp_y, 2));
+                                //D( std::cout << "X: " << tmp_y << " Y: " << tmp_x << std::endl );
+                                this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 2));
                                 this->m_sites_2x2.push_back(this->m_sites.back());
                         }
                 }
         }
         D( std::cout << "Number of 2x2 sites created: " << this->m_sites_2x2.size() << std::endl );
         // link sites
-        int tmp_x = 0;
         int tmp_y = 0;
+        int tmp_x = 0;
         for(Site * s : this->m_sites_1x1) {
-                tmp_x = s->get_x();
-                tmp_y = s->get_y();
+                tmp_y = s->get_x();
+                tmp_x = s->get_y();
                 std::vector<Site *> tmp_sites;
                 tmp_sites.reserve(4);
                 //
-                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_y+1,tmp_x+0)]);
-                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_y+0,tmp_x+1)]);
-                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_y-1,tmp_x-0)]);
-                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_y-0,tmp_x-1)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)]);
+                tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]);
                 //
                 s->set_neighbor_sites(tmp_sites);
                 std::vector<std::vector<bool *> > tmp_blocking;
                 tmp_blocking.reserve(4);
                 if(!this->m_number_of_tracers_2x2) {
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y+1,tmp_x+0)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr()});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y+0,tmp_x+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr()});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y-1,tmp_x-0)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)]->get_state_ptr()});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y-0,tmp_x-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr()});
                 }
                 else {
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y+1,tmp_x+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x+0)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr()});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y+0,tmp_x+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+1,tmp_x-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+0,tmp_x-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr()});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y-1,tmp_x-0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-1,tmp_x-0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-1,tmp_x+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-1)]->get_state_ptr()});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y-0,tmp_x-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-0,tmp_x+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+1,tmp_x+2)]->get_state_ptr()});
-
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr()});
                 }
                 s->set_blocking_sites(tmp_blocking);
         }
         for(Site * s : this->m_sites_2x2) {
-                tmp_x = s->get_x();
-                tmp_y = s->get_y();
+                tmp_y = s->get_x();
+                tmp_x = s->get_y();
                 std::vector<Site *> tmp_sites;
                 tmp_sites.reserve(4);
                 //
-                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_y+1,tmp_x+0)]);
-                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_y+0,tmp_x+1)]);
-                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_y-1,tmp_x-0)]);
-                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_y-0,tmp_x-1)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+0)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+0)]);
+                tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-1)]);
                 //
                 s->set_neighbor_sites(tmp_sites);
                 std::vector<std::vector<bool *> > tmp_blocking;
                 tmp_blocking.reserve(4);
                 if(!this->m_number_of_tracers_1x1) {
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_y+2,tmp_x+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr()});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_y+1,tmp_x-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+0,tmp_x-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-1,tmp_x-2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr()});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_y-2,tmp_x-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-2,tmp_x-0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-2,tmp_x+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr()});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_y-1,tmp_x+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+0,tmp_x+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+1,tmp_x+2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr()});
                 }
                 else{
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y+1,tmp_x+0)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_y+1,tmp_x-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+2,tmp_x-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr()});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y+0,tmp_x-2)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_y-1,tmp_x-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+1,tmp_x-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+0,tmp_x-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-1,tmp_x-2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
+                                                this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr()});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y-2,tmp_x-1)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_y-2,tmp_x+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-2,tmp_x-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-2,tmp_x-0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-2,tmp_x+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr(),
+                                                this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr()});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_y-1,tmp_x+1)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_y-0,tmp_x+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y-1,tmp_x+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+0,tmp_x+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_y+1,tmp_x+2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-1)]->get_state_ptr(),
+                                                this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr()});
                 }
                 s->set_blocking_sites(tmp_blocking);
         }
@@ -266,8 +277,8 @@ void Lattice::setup_movement_selection_list(){
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Lattice::setup_tracers(){
         int tmp_id = 0;
-        int tmp_x = 0;
         int tmp_y = 0;
+        int tmp_x = 0;
         int tmp_pos = 0;
         Site * tmp_site;
         std::vector<int> tmp_occupied_sites(this->m_grid_size * this->m_grid_size,0);
@@ -289,7 +300,7 @@ void Lattice::setup_tracers(){
                 //D( std::cout << "Start positions" << std::endl );
                 //D( this->print_vector(tmp_start_positions_2x2) );
                 // create the 2x2 tracers:
-                std::shuffle(tmp_start_positions_2x2.begin(),tmp_start_positions_2x2.end(),*(this->m_rng));
+                std::shuffle(tmp_start_positions_2x2.begin(),tmp_start_positions_2x2.end(),this->m_rng);
                 // shuffle_vector(tmp_start_positions_2x2);
                 //D( std::cout << "Start positions (shuffled)" << std::endl );
                 //D( this->print_vector(tmp_start_positions_2x2) );
@@ -302,10 +313,10 @@ void Lattice::setup_tracers(){
                         this->m_tracers_2x2.push_back(this->m_tracers.back());
                         // increment id counter,
                         tmp_id++;
-                        tmp_occupied_sites[coord(tmp_y+0,tmp_x+0)] = 1;
-                        tmp_occupied_sites[coord(tmp_y+1,tmp_x+0)] = 1;
-                        tmp_occupied_sites[coord(tmp_y+0,tmp_x+1)] = 1;
-                        tmp_occupied_sites[coord(tmp_y+1,tmp_x+1)] = 1;
+                        tmp_occupied_sites[coord(tmp_x+0,tmp_y+0)] = 1;
+                        tmp_occupied_sites[coord(tmp_x+1,tmp_y+0)] = 1;
+                        tmp_occupied_sites[coord(tmp_x+0,tmp_y+1)] = 1;
+                        tmp_occupied_sites[coord(tmp_x+1,tmp_y+1)] = 1;
                 }
                 //D( std::cout << "occupied sites after 2x2 setup: " << std::endl );
                 //D( this->print_vector(tmp_occupied_sites) );
@@ -327,7 +338,7 @@ void Lattice::setup_tracers(){
                 //D( std::cout << "Start positions" << std::endl );
                 //D( this->print_vector(tmp_start_positions_1x1) );
                 // shuffle_vector(tmp_start_positions_1x1);
-                std::shuffle(tmp_start_positions_1x1.begin(),tmp_start_positions_1x1.end(),*(this->m_rng));
+                std::shuffle(tmp_start_positions_1x1.begin(),tmp_start_positions_1x1.end(),this->m_rng);
                 //D( std::cout << "Start positions (shuffled)" << std::endl );
                 //D( this->print_vector(tmp_start_positions_1x1) );
                 for (int n = 0; n < this->m_number_of_tracers_1x1; n++)
@@ -346,7 +357,7 @@ void Lattice::setup_tracers(){
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // Transforms x,y to linear coordinate and back
-inline int Lattice::coord(int y, int x){
+inline int Lattice::coord(int x, int y){
         // compute linear coordinate from (x,y), with periodic boundary conditions enforced
         return ( ( y + this->m_grid_size ) % this->m_grid_size ) * this->m_grid_size + ( ( x + this->m_grid_size ) % this->m_grid_size );
 }
@@ -370,7 +381,7 @@ void Lattice::evolve_no_interaction(){
 void Lattice::timestep(){
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                this->m_tracers[this->m_movement_selector[this->m_random_par(*(this->m_rng))]]->step(this->m_random_dir(*(this->m_rng)));
+                this->m_tracers[this->m_movement_selector[this->m_random_par(this->m_rng)]]->step(this->m_random_dir(this->m_rng));
         }
         this->m_t++;
         D( this->print_tracers() );
@@ -382,14 +393,14 @@ void Lattice::timestep(){
 void Lattice::timestep_warmup(){
         for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                this->m_tracers[this->m_movement_selector[this->m_random_par(*(this->m_rng))]]->step_warmup(this->m_random_dir(*(this->m_rng)));
+                this->m_tracers[this->m_movement_selector[this->m_random_par(this->m_rng)]]->step_warmup(this->m_random_dir(this->m_rng));
         }
         this->m_w++;
 }
 void Lattice::timestep_no_interaction(){
         for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
-                this->m_tracers[this->m_movement_selector[this->m_random_par(*(this->m_rng))]]->step_unhindered(this->m_random_dir(*(this->m_rng)));
+                this->m_tracers[this->m_movement_selector[this->m_random_par(this->m_rng)]]->step_unhindered(this->m_random_dir(this->m_rng));
         }
         this->m_t++;
         if(this->m_t % this->m_dinterval) { return; }
@@ -402,6 +413,11 @@ void Lattice::update_data(){
         double tmp_sum_lsq_1x1 = 0;
         double tmp_sum_stp_2x2 = 0;
         double tmp_sum_lsq_2x2 = 0;
+        double tmp_one_over_t = 1/(double)this->m_t;
+        std::vector<int> tmp_site_corr_1x1;
+        std::vector<int> tmp_site_corr_2x2;
+        tmp_site_corr_1x1.reserve(4*this->m_number_of_tracers_1x1);
+        tmp_site_corr_2x2.reserve(4*this->m_number_of_tracers_2x2);
         //
         this->m_dinterval = (int)std::pow(10,(int)std::log10(this->m_t));
         // double tmp_avg_rate_div = this->m_t > 1 ? (int)std::pow(10,(int)std::log10(this->m_t-1)) : 1.0;
@@ -411,17 +427,85 @@ void Lattice::update_data(){
                 tmp_sum_stp_1x1 += tr->get_steps_taken();
                 tmp_sum_lsq_1x1 += tr->get_lsq();
                 this->m_pos_1x1.push_back(tr->get_pos());
+                for(int s : tr->get_site_correlation()) { tmp_site_corr_1x1.push_back(s); }
         }
         for(Tracer * tr : this->m_tracers_2x2) {
                 tmp_sum_stp_2x2 += tr->get_steps_taken();
                 tmp_sum_lsq_2x2 += tr->get_lsq();
                 this->m_pos_2x2.push_back(tr->get_pos());
+                for(int s : tr->get_site_correlation()) { tmp_site_corr_2x2.push_back(s); }
         }
         //
-        this->m_avg_rate_1x1.push_back(tmp_sum_stp_1x1*this->m_one_over_n_1x1);
-        this->m_avg_lsq_1x1.push_back(tmp_sum_lsq_1x1*this->m_one_over_n_1x1);
-        this->m_avg_rate_2x2.push_back(tmp_sum_stp_2x2*this->m_one_over_n_2x2);
-        this->m_avg_lsq_2x2.push_back(tmp_sum_lsq_2x2*this->m_one_over_n_2x2);
+        if(this->m_number_of_tracers_1x1) {
+                this->m_avg_rate_1x1.push_back(tmp_sum_stp_1x1*tmp_one_over_t*this->m_one_over_n_1x1);
+                this->m_avg_diff_1x1.push_back(tmp_sum_lsq_1x1*tmp_one_over_t*this->m_one_over_n_1x1);
+                this->m_avg_lsq_1x1.push_back(tmp_sum_lsq_1x1*this->m_one_over_n_1x1);
+                if(!this->m_number_of_tracers_2x2)
+                {
+                        std::vector<unsigned long> tmp_site_corr_1x1_counter;
+                        tmp_site_corr_1x1_counter.reserve(1);
+                        tmp_site_corr_1x1_counter.push_back(std::count(tmp_site_corr_1x1.begin(),
+                                                                       tmp_site_corr_1x1.end(),1));
+                        for(unsigned long n : tmp_site_corr_1x1_counter) { this->m_site_corr_1x1.push_back(((double)n)*this->m_one_over_four_n_1x1); }
+
+                }
+                else
+                {
+                        std::vector<unsigned long> tmp_site_corr_1x1_counter;
+                        tmp_site_corr_1x1_counter.reserve(3);
+                        tmp_site_corr_1x1_counter.push_back(std::count(tmp_site_corr_1x1.begin(),
+                                                                       tmp_site_corr_1x1.end(),1));
+                        tmp_site_corr_1x1_counter.push_back(std::count(tmp_site_corr_1x1.begin(),
+                                                                       tmp_site_corr_1x1.end(),2));
+                        tmp_site_corr_1x1_counter.push_back(std::count(tmp_site_corr_1x1.begin(),
+                                                                       tmp_site_corr_1x1.end(),4));
+                        for(unsigned long n : tmp_site_corr_1x1_counter) { this->m_site_corr_1x1.push_back((double)n*this->m_one_over_four_n_1x1); }
+
+                }
+        }
+        if(this->m_number_of_tracers_2x2) {
+                this->m_avg_rate_2x2.push_back(tmp_sum_stp_2x2*tmp_one_over_t*this->m_one_over_n_2x2);
+                this->m_avg_diff_2x2.push_back(tmp_sum_lsq_2x2*tmp_one_over_t*this->m_one_over_n_2x2);
+                this->m_avg_lsq_2x2.push_back(tmp_sum_lsq_2x2*this->m_one_over_n_2x2);
+                if(!this->m_number_of_tracers_1x1)
+                {
+                        std::vector<unsigned long> tmp_site_corr_2x2_counter;
+                        tmp_site_corr_2x2_counter.reserve(4);
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),1));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),2));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),4));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),5));
+                        for(unsigned long n : tmp_site_corr_2x2_counter) { this->m_site_corr_2x2.push_back((double)n*this->m_one_over_four_n_2x2); }
+                }
+                else
+                {
+                        std::vector<unsigned long> tmp_site_corr_2x2_counter;
+                        tmp_site_corr_2x2_counter.reserve(9);
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),1));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),2));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),4));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),8));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),16));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),3));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),6));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),17));
+                        tmp_site_corr_2x2_counter.push_back(std::count(tmp_site_corr_2x2.begin(),
+                                                                       tmp_site_corr_2x2.end(),20));
+                        for(unsigned long n : tmp_site_corr_2x2_counter) { this->m_site_corr_2x2.push_back((double)n*this->m_one_over_four_n_2x2); }
+                }
+        }
         //
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -457,6 +541,13 @@ std::vector<double> Lattice::get_avg_rate_1x1(){
 }
 std::vector<double> Lattice::get_avg_rate_2x2(){
         return this->m_avg_rate_2x2;
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<double> Lattice::get_avg_diff_1x1(){
+        return this->m_avg_diff_1x1;
+}
+std::vector<double> Lattice::get_avg_diff_2x2(){
+        return this->m_avg_diff_2x2;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> Lattice::get_avg_lsq_1x1(){
@@ -528,25 +619,11 @@ std::vector<int> Lattice::get_pos_2x2(){
         return this->m_pos_2x2;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<double> Lattice::get_avg_pos_corr_1x1(){
-        int tmp_vec_size = this->m_number_of_tracers_2x2 ? 3 : 1;
-        std::vector<unsigned int> tmp_pos_count(tmp_vec_size,1);
-
-        std::vector<double> tmp_avg_pos(tmp_vec_size,0);
-        std::transform(tmp_pos_count.begin(),tmp_pos_count.end(),tmp_avg_pos.begin(),[&](unsigned int i) -> double {
-                return (double)i*this->m_one_over_four_n_1x1;
-        });
-        return tmp_avg_pos;
+std::vector<double> Lattice::get_site_corr_1x1(){
+        return this->m_site_corr_1x1;
 }
-std::vector<double> Lattice::get_avg_pos_corr_2x2(){
-        int tmp_vec_size = this->m_number_of_tracers_1x1 ? 9 : 4;
-        std::vector<unsigned int> tmp_pos_count(tmp_vec_size,1);
-
-        std::vector<double> tmp_avg_pos(tmp_vec_size,0);
-        std::transform(tmp_pos_count.begin(),tmp_pos_count.end(),tmp_avg_pos.begin(),[&](unsigned int i) -> double {
-                return (double)i*this->m_one_over_four_n_2x2;
-        });
-        return tmp_avg_pos;
+std::vector<double> Lattice::get_site_corr_2x2(){
+        return this->m_site_corr_2x2;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Lattice::print_tracers()

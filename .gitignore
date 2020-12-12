@@ -3,9 +3,7 @@ obj/
 build/
 lattice_gas.dSYM
 lattice_gas
-msd_*
-cor_*
-rat_*
-pos_*
-sit_*
 perf_test.sh
+
+1x1_*
+2x2_*

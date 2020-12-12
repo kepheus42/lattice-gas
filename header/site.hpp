@@ -1,18 +1,19 @@
 #ifndef SITE_H
 #define SITE_H
 
-
 #include <vector>
 #include <algorithm>
+#include <numeric>
 #include <iostream>
 
 class Site {
 public:
 Site(int,int,int,int);
 bool step_is_valid(int);
-bool blocking_site_state(int,int);
+bool get_blocking_site_state(int,int);
 std::vector<unsigned int> blocking_site_corr();
 std::vector<std::vector<bool *> > get_blocking_sites();
+std::vector<int> get_site_correlation();
 // to change the state of the Site
 void set_neighbor_sites(std::vector<Site *>);
 void set_blocking_sites(std::vector<std::vector<bool *> >);
@@ -26,7 +27,7 @@ int get_x();
 int get_y();
 Site * get_neighbor_by_dir(int);
 // move from one site to a neighbor, specified by dir
-Site * move(int);
+Site * jump_in_direction(int);
 // debug
 void db_print_vector(std::vector<Site *>);
 void db_print_properties();
@@ -38,8 +39,10 @@ int m_x;
 int m_y;
 bool m_is_empty;
 int m_type;
+int m_blocking_sites_per_dir;
 std::vector<Site *> m_neighbor_sites;
 std::vector< std::vector <bool *> > m_blocking_sites;
+std::vector<int> m_powers_of_two;
 };
 
 #endif

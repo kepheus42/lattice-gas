@@ -7,8 +7,7 @@ Features
 * Output:
   * mean squared distance travelled
   * step rate
-  * waiting time distribution
-  * conditional probability for combinations of up to 3 steps
+  * conditional probabilities for step sequences of length < 4
 ---
 TODO:
 * trapping
