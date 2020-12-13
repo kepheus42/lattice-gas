@@ -24,7 +24,7 @@ Tracer::Tracer(int id, int type, Site * site) :
         m_correlations(84,0),
         m_isstuck(false)
 {
-        this->m_site->swap_state();
+        this->m_site->set_not_empty();
         //D( std::cout << "Creating 1x1 Tracer " << this->m_id << " at " << "(" << this->m_site->get_x() << "," << this->m_site->get_y() << ")" << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -55,12 +55,13 @@ void Tracer::update_last_step(int last_step_dir)
 // function for random walk stepping
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step(int dir){
+        D( std::cout << "Step attempt:" << std::endl );
         D( std::cout << this->m_id << " -> " << dir << std::endl );
         //D( std::cout << "STEP!" << std::endl );
         //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsq << std::endl );
         D( std::cout << "Dir: " << dir << std::endl );
         // if(this->m_isstuck) { return; }
-        if( this->m_site->step_is_valid(dir) )
+        if( !(this->m_site->step_is_invalid(dir)) )
         {
                 // this->m_steps_taken++;
                 this->m_site = this->m_site->jump_in_direction(dir);
@@ -73,7 +74,7 @@ void Tracer::step(int dir){
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_warmup(int dir){
         // if(this->m_isstuck) { return; }
-        if( this->m_site->step_is_valid(dir) ) {
+        if( !(this->m_site->step_is_invalid(dir)) ) {
                 // return; }
                 this->m_site = this->m_site->jump_in_direction(dir);
         }
@@ -135,7 +136,7 @@ std::vector<long> Tracer::get_correlations(){
         return this->m_correlations;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<std::vector<bool*> > Tracer::get_blocking_sites(){
+std::vector<std::vector<Site*> > Tracer::get_blocking_sites(){
         return this->m_site->get_blocking_sites();
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */

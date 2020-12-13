@@ -16,11 +16,12 @@ Site::Site(int id, int x, int y, int t) :
         m_powers_of_two({1,2,4,8,16})
         // m_blocking_sites_per_dir(b_per_dir)
 {
-        //this->m_neighbor_sites.reserve(4);
+        this->m_neighbor_sites.reserve(4);
+        this->m_blocking_sites.reserve(4);
         D(std::cout << "Creating site: " << id << " at " << x << "," << y << std::endl);
 }
 
-bool Site::step_is_valid(int dir){
+bool Site::step_is_invalid(int dir){
         // std::accumulate(bpv.begin()+(dir-1)*n_per_dir,bpv.begin()+dir*n_per_dir,true,[]( bool b, bool* bp )->bool{ return b&(*bp); })
         // int tmp = 1;
         // for(auto var : this->m_blocking_sites[dir-1]) { tmp *= (*var); }
@@ -30,16 +31,16 @@ bool Site::step_is_valid(int dir){
            ~ true if all sites are empty
            ~ false otherwise
          */
-        return std::all_of(this->m_blocking_sites[dir-1].begin(), this->m_blocking_sites[dir-1].end(), []( bool* bptr ) -> bool {
-                return (*bptr);
+        return std::any_of(this->m_blocking_sites[dir-1].begin(), this->m_blocking_sites[dir-1].end(), []( Site * s ) -> bool {
+                return !(s->is_empty());
         });
 }
 
 bool Site::get_blocking_site_state(int dir, int which){
-        return *(this->m_blocking_sites[dir][which]);
+        return this->m_blocking_sites[dir][which]->is_empty();
 }
 
-std::vector<std::vector<bool * > > Site::get_blocking_sites(){
+std::vector<std::vector<Site * > > Site::get_blocking_sites(){
         return this->m_blocking_sites;
 }
 
@@ -49,8 +50,8 @@ std::vector<int> Site::get_site_correlation(){
         for(auto direction : this->m_blocking_sites)
         {
                 /* */
-                tmp_site_corr.push_back(std::inner_product(direction.begin(),direction.end(),this->m_powers_of_two.begin(),0,std::plus<>(),[](bool * bp, int i) -> int {
-                        return (!(*bp)) * i;
+                tmp_site_corr.push_back(std::inner_product(direction.begin(),direction.end(),this->m_powers_of_two.begin(),0,std::plus<>(),[](Site * s, int i) -> int {
+                        return (!(s->is_empty())) * i;
                 }));
         }
         return tmp_site_corr;
@@ -64,7 +65,7 @@ void Site::set_neighbor_sites(std::vector<Site *> sites){
         this->m_neighbor_sites = sites;
 }
 
-void Site::set_blocking_sites(std::vector<std::vector<bool *> > vec){
+void Site::set_blocking_sites(std::vector<std::vector<Site *> > vec){
         this->m_blocking_sites = vec;
 }
 
@@ -114,4 +115,24 @@ void Site::db_print_vector(std::vector<Site *> sites){
 
 void Site::db_print_properties(){
         std::cout << "Site: " << this->m_type << " " << this->m_id << " " << this->m_x << " " << this->m_y << std::endl;
+}
+
+void Site::print_neighbor_sites(){
+        std::cout << "Site: " << this->m_id << " at " << this->m_x << "," << this->m_y << std::endl;
+        for(int dir = 1; dir < 5; dir++)
+        {
+                std::cout << "Dir "<< dir << " : " << this->m_neighbor_sites[dir-1]->get_id() << std::endl;
+        }
+}
+
+void Site::print_blocking_sites(){
+        std::cout << "Site: " << this->m_id << " at " << this->m_x << "," << this->m_y << std::endl;
+        for(int dir = 1; dir < 5; dir++)
+        {
+                std::cout << "Dir "<< dir << " : ";
+                for(Site * s : this->m_blocking_sites[dir-1]) {
+                        std::cout << s->get_id() << " ";
+                }
+                std::cout << std::endl;
+        }
 }

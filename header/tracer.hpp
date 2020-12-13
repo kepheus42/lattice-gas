@@ -49,7 +49,7 @@ std::vector<int> get_site_correlation();
 int get_pos_corr(int);
 //
 std::vector<long> get_correlations();
-std::vector<std::vector<bool*> > get_blocking_sites();
+std::vector<std::vector<Site*> > get_blocking_sites();
 //
 
 protected:

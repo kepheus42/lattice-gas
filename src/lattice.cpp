@@ -78,7 +78,7 @@ Lattice::Lattice(int timesteps,
         // only allocate memory for sites if the respective tracer species is present
         this->m_sites_1x1.reserve(this->m_number_of_tracers_1x1 > 0 ? this->m_number_of_sites : 0);
         this->m_sites_2x2.reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites : 0);
-        this->m_sites.reserve(this->m_sites_1x1.capacity()+this->m_sites_2x2.capacity());
+        // this->m_sites.reserve(this->m_sites_1x1.capacity()+this->m_sites_2x2.capacity());
         // allocate sufficient memory for the tracers
         this->m_tracers.reserve(this->m_number_of_tracers);
         this->m_tracers_1x1.reserve(this->m_number_of_tracers_1x1);
@@ -98,13 +98,14 @@ void Lattice::setup_sites(){
         D( std::cout << "1x1: " << std::endl );
         if(this->m_number_of_tracers_1x1)
         {
-                for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
+                for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
                 {
-                        for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
+                        for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
                         {
                                 //D( std::cout << "X: " << tmp_y << " Y: " << tmp_x << std::endl );
-                                this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 1));
-                                this->m_sites_1x1.push_back(this->m_sites.back());
+                                // this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 1));
+                                // this->m_sites_1x1.push_back(this->m_sites.back());
+                                this->m_sites_1x1.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 1));
                         }
                 }
         }
@@ -113,13 +114,14 @@ void Lattice::setup_sites(){
         D( std::cout << "2x2: " << std::endl );
         if(this->m_number_of_tracers_2x2)
         {
-                for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
+                for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
                 {
-                        for(int tmp_y = 0; tmp_y < this->m_grid_size; tmp_y++)
+                        for(int tmp_x = 0; tmp_x < this->m_grid_size; tmp_x++)
                         {
                                 //D( std::cout << "X: " << tmp_y << " Y: " << tmp_x << std::endl );
-                                this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 2));
-                                this->m_sites_2x2.push_back(this->m_sites.back());
+                                // this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 2));
+                                // this->m_sites_2x2.push_back(this->m_sites.back());
+                                this->m_sites_2x2.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 2));
                         }
                 }
         }
@@ -127,11 +129,16 @@ void Lattice::setup_sites(){
         // link sites
         int tmp_y = 0;
         int tmp_x = 0;
+
+        std::vector<Site *> tmp_sites;
+        tmp_sites.reserve(4);
+
+        std::vector<std::vector<Site *> > tmp_blocking;
+        tmp_blocking.reserve(4);
+
         for(Site * s : this->m_sites_1x1) {
-                tmp_y = s->get_x();
-                tmp_x = s->get_y();
-                std::vector<Site *> tmp_sites;
-                tmp_sites.reserve(4);
+                tmp_x = s->get_x();
+                tmp_y = s->get_y();
                 //
                 tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]);
                 tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]);
@@ -139,43 +146,41 @@ void Lattice::setup_sites(){
                 tmp_sites.push_back(this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]);
                 //
                 s->set_neighbor_sites(tmp_sites);
-                std::vector<std::vector<bool *> > tmp_blocking;
-                tmp_blocking.reserve(4);
+                tmp_sites.clear();
                 if(!this->m_number_of_tracers_2x2) {
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)]});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]});
                 }
                 else {
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-1)]});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]});
                 }
                 s->set_blocking_sites(tmp_blocking);
+                tmp_blocking.clear();
         }
         for(Site * s : this->m_sites_2x2) {
-                tmp_y = s->get_x();
-                tmp_x = s->get_y();
-                std::vector<Site *> tmp_sites;
-                tmp_sites.reserve(4);
+                tmp_x = s->get_x();
+                tmp_y = s->get_y();
                 //
                 tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+0)]);
                 tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+1)]);
@@ -183,59 +188,57 @@ void Lattice::setup_sites(){
                 tmp_sites.push_back(this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-1)]);
                 //
                 s->set_neighbor_sites(tmp_sites);
-                std::vector<std::vector<bool *> > tmp_blocking;
-                tmp_blocking.reserve(4);
+                tmp_sites.clear();
                 if(!this->m_number_of_tracers_1x1) {
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)],
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)],
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]});
                 }
                 else{
                         // dir = 1
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+0)],
+                                                this->m_sites_1x1[this->coord(tmp_x+1,tmp_y+1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y-1)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x+2,tmp_y+1)]});
                         // dir = 2
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x+0,tmp_y+2)],
+                                                this->m_sites_1x1[this->coord(tmp_x-1,tmp_y+2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y+2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y+2)],
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y+2)]});
                         // dir = 3
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+0)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+1)],
+                                                this->m_sites_1x1[this->coord(tmp_x-2,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+1)],
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y+0)],
+                                                this->m_sites_2x2[this->coord(tmp_x-2,tmp_y-1)]});
                         // dir = 4
-                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-1)]->get_state_ptr(),
-                                                this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)]->get_state_ptr(),
-                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]->get_state_ptr()});
+                        tmp_blocking.push_back({this->m_sites_1x1[this->coord(tmp_x-1,tmp_y-1)],
+                                                this->m_sites_1x1[this->coord(tmp_x+0,tmp_y-1)],
+                                                this->m_sites_2x2[this->coord(tmp_x-1,tmp_y-2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+0,tmp_y-2)],
+                                                this->m_sites_2x2[this->coord(tmp_x+1,tmp_y-2)]});
                 }
                 s->set_blocking_sites(tmp_blocking);
+                tmp_blocking.clear();
         }
-
         D( std::cout << "Finished Neighbor setup..." << std::endl );
-        // D( this->print_neighbors() );
-        // D( this->print_sites() );
-        // D( std::cout << "Size of m_sites_1x1: " << this->m_sites_1x1.size() << std::endl << "Size of m_sites_2x2: " << this->m_sites_2x2.size() << std::endl);
+        D( std::cout << "Size of m_sites_1x1: " << this->m_sites_1x1.size() << std::endl << "Size of m_sites_2x2: " << this->m_sites_2x2.size() << std::endl);
+        D( this->print_sites() );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Lattice::setup_movement_selection_list(){
@@ -648,9 +651,17 @@ void Lattice::print_tracer_positions()
         }
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-void Lattice::print_site_states()
+void Lattice::print_site_1x1_states()
 {
-        for(Site * s : this->m_sites)
+        for(Site * s : this->m_sites_1x1)
+        {
+                printf(" %i,%i state: %i \n",s->get_x(),s->get_y(),s->is_empty());
+        }
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+void Lattice::print_site_2x2_states()
+{
+        for(Site * s : this->m_sites_2x2)
         {
                 printf(" %i,%i state: %i \n",s->get_x(),s->get_y(),s->is_empty());
         }
@@ -658,14 +669,32 @@ void Lattice::print_site_states()
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Lattice::print_sites()
 {
-        // print all sites (1x1 and 2x2) to std output
-        std::cout << "Sites:" << std::endl << "1x1" << std::endl;
-        for(Site * s : this->m_sites_1x1) {
-                std::cout << s->get_id() << " " << s->get_x() << " " << s->get_y() << std::endl;
+        std::cout << "Site Connections:" << std::endl;
+        if(this->m_number_of_tracers_1x1)
+        {
+                std::cout << "1x1 Neighbors Sites" << std::endl;
+                for(Site * s : this->m_sites_1x1)
+                {
+                        s->print_neighbor_sites();
+                }
+                std::cout << "1x1 Blocking Sites" << std::endl;
+                for(Site * s : this->m_sites_1x1)
+                {
+                        s->print_blocking_sites();
+                }
         }
-        std::cout << "2x2" << std::endl;
-        for(Site * s : this->m_sites_2x2) {
-                std::cout << s->get_id() << " " << s->get_x() << " " << s->get_y() << std::endl;
+        if(this->m_number_of_tracers_2x2)
+        {
+                std::cout << "2x2 Neighbors Sites" << std::endl;
+                for(Site * s : this->m_sites_2x2)
+                {
+                        s->print_neighbor_sites();
+                }
+                std::cout << "2x2 Blocking Sites" << std::endl;
+                for(Site * s : this->m_sites_2x2)
+                {
+                        s->print_blocking_sites();
+                }
         }
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */

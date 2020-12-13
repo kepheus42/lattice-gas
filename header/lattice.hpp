@@ -71,7 +71,8 @@ std::vector<int> get_pos_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void print_tracers();
 void print_tracer_positions();
-void print_site_states();
+void print_site_1x1_states();
+void print_site_2x2_states();
 void print_sites();
 template <typename T>
 void db_print_vector(std::vector<T>);
@@ -110,7 +111,7 @@ double m_one_over_n_2x2;
 double m_one_over_four_n_2x2;
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // to keep track of the lattice geometry
-std::vector<Site*> m_sites;
+// std::vector<Site*> m_sites;
 std::vector<Site*> m_sites_1x1;
 std::vector<Site*> m_sites_2x2;
 // to store the tracer objects
