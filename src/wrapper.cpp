@@ -77,91 +77,97 @@ void Wrapper::evolve_no_interaction(){
         D( std::cerr << "Done!" << std::endl );
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<double> Wrapper::get_result_lsq_1x1(){
-        D( std::cout << "  Wrapper::get_result_lsq_1x1() ");
-        std::vector<double> tmp_avg_lsq(this->m_dpoints,0.0);
-        for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current = l->get_avg_lsq_1x1();
-                std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),tmp_current.begin(),tmp_avg_lsq.begin(),std::plus<double>());
-        }
-        std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),tmp_avg_lsq.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
-        D( std::cout << "Done!" << std::endl );
-        return tmp_avg_lsq;
-}
-std::vector<double> Wrapper::get_result_lsq_2x2(){
-        D( std::cout << "  Wrapper::get_result_lsq_2x2() ");
-        std::vector<double> tmp_avg_lsq(this->m_dpoints,0.0);
-        for(Lattice * l : this->m_lattices) {
-                std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),l->get_avg_lsq_2x2().begin(),tmp_avg_lsq.begin(),std::plus<double>());
-        }
-        std::transform(tmp_avg_lsq.begin(),tmp_avg_lsq.end(),tmp_avg_lsq.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
-        D( std::cout << "Done!" << std::endl );
-        return tmp_avg_lsq;
-}
-/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> Wrapper::get_result_rate_1x1(){
         D( std::cout << "  Wrapper::get_result_rate_1x1() ");
-        std::vector<double> tmp_avg_rate(this->m_dpoints,0.0);
-        for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current_avg_rate = l->get_avg_rate_1x1();
-                std::transform(tmp_current_avg_rate.begin(),tmp_current_avg_rate.end(),tmp_avg_rate.begin(),tmp_avg_rate.begin(),std::plus<double>());
+        std::vector<double> tmp_avg_rate;
+        tmp_avg_rate.reserve(this->m_dpoints * this->m_number_of_lattices);
+        for(Lattice * l : this->m_lattices)
+        {
+                for(double d : l->get_avg_rate_1x1())
+                {
+                        tmp_avg_rate.push_back(d);
+                }
         }
-        std::transform(tmp_avg_rate.begin(),tmp_avg_rate.end(),tmp_avg_rate.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
         D( std::cout << "Done!" << std::endl );
         return tmp_avg_rate;
 }
 std::vector<double> Wrapper::get_result_rate_2x2(){
         D( std::cout << "  Wrapper::get_result_rate_2x2() ");
-        std::vector<double> tmp_avg_rate(this->m_dpoints,0);
-        for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current_avg_rate = l->get_avg_rate_2x2();
-                std::transform(tmp_current_avg_rate.begin(),tmp_current_avg_rate.end(),tmp_avg_rate.begin(),tmp_avg_rate.begin(),std::plus<double>());
+        std::vector<double> tmp_avg_rate;
+        tmp_avg_rate.reserve(this->m_dpoints * this->m_number_of_lattices);
+        for(Lattice * l : this->m_lattices)
+        {
+                for(double d : l->get_avg_rate_2x2())
+                {
+                        tmp_avg_rate.push_back(d);
+                }
         }
-        std::transform(tmp_avg_rate.begin(),tmp_avg_rate.end(),tmp_avg_rate.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
         D( std::cout << "Done!" << std::endl );
         return tmp_avg_rate;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<double> Wrapper::get_result_diff_1x1(){
-        D( std::cout << "  Wrapper::get_result_diff_1x1() ");
-        std::vector<double> tmp_avg_diff(this->m_dpoints,0.0);
-        for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current_avg_diff = l->get_avg_diff_1x1();
-                std::transform(tmp_current_avg_diff.begin(),tmp_current_avg_diff.end(),tmp_avg_diff.begin(),tmp_avg_diff.begin(),std::plus<double>());
+// new version with output per lattice instance
+std::vector<double> Wrapper::get_result_lsq_1x1(){
+        D( std::cout << "  Wrapper::get_result_lsq_1x1() ");
+        std::vector<double> tmp_avg_lsq;
+        tmp_avg_lsq.reserve(this->m_dpoints * this->m_number_of_lattices);
+        for(Lattice * l : this->m_lattices)
+        {
+                for(double lsq : l->get_avg_lsq_1x1())
+                {
+                        tmp_avg_lsq.push_back(lsq);
+                }
         }
-        std::transform(tmp_avg_diff.begin(),tmp_avg_diff.end(),tmp_avg_diff.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
         D( std::cout << "Done!" << std::endl );
-        return tmp_avg_diff;
+        return tmp_avg_lsq;
 }
-std::vector<double> Wrapper::get_result_diff_2x2(){
-        D( std::cout << "  Wrapper::get_result_diff_2x2() ");
-        std::vector<double> tmp_avg_diff(this->m_dpoints,0);
-        for(Lattice * l : this->m_lattices) {
-                std::vector<double> tmp_current_avg_diff = l->get_avg_diff_2x2();
-                std::transform(tmp_current_avg_diff.begin(),tmp_current_avg_diff.end(),tmp_avg_diff.begin(),tmp_avg_diff.begin(),std::plus<double>());
+std::vector<double> Wrapper::get_result_lsq_2x2(){
+        D( std::cout << "  Wrapper::get_result_lsq_2x2() ");
+        std::vector<double> tmp_avg_lsq;
+        tmp_avg_lsq.reserve(this->m_dpoints * this->m_number_of_lattices);
+        for(Lattice * l : this->m_lattices)
+        {
+                for(double lsq : l->get_avg_lsq_2x2())
+                {
+                        tmp_avg_lsq.push_back(lsq);
+                }
         }
-        std::transform(tmp_avg_diff.begin(),tmp_avg_diff.end(),tmp_avg_diff.begin(),std::bind(std::divides<double>(), std::placeholders::_1, (double)this->m_number_of_lattices));
         D( std::cout << "Done!" << std::endl );
-        return tmp_avg_diff;
+        return tmp_avg_lsq;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+// std::vector<double> Wrapper::get_result_step_corr_1x1(){
+//         std::vector<double> tmp_corr(84,0);
+//         double tmp_norm = 1/(double)this->m_number_of_lattices;
+//         for(Lattice * l : this->m_lattices) {
+//                 std::transform(tmp_corr.begin(),tmp_corr.end(),l->get_avg_corr_1x1().begin(),tmp_corr.begin(),std::plus<>{});
+//         }
+//         std::transform(tmp_corr.begin(),tmp_corr.end(),tmp_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm));
+//         return tmp_corr;
+// }
 std::vector<double> Wrapper::get_result_step_corr_1x1(){
-        std::vector<double> tmp_corr(84,0);
-        double tmp_norm = 1/(double)this->m_number_of_lattices;
-        for(Lattice * l : this->m_lattices) {
-                std::transform(tmp_corr.begin(),tmp_corr.end(),l->get_avg_corr_1x1().begin(),tmp_corr.begin(),std::plus<>{});
+        std::vector<double> tmp_step_corr;
+        tmp_step_corr.reserve(this->m_lattices[0]->get_avg_corr_1x1().size() * this->m_number_of_lattices);
+        for(Lattice * l : this->m_lattices)
+        {
+                for(double d : l->get_avg_corr_1x1())
+                {
+                        tmp_step_corr.push_back(d);
+                }
         }
-        std::transform(tmp_corr.begin(),tmp_corr.end(),tmp_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm));
-        return tmp_corr;
+        return tmp_step_corr;
 }
 std::vector<double> Wrapper::get_result_step_corr_2x2(){
-        std::vector<double> tmp_corr(84,0);
-        double tmp_norm = 1/(double)this->m_number_of_lattices;
-        for(Lattice * l : this->m_lattices) {
-                std::transform(tmp_corr.begin(),tmp_corr.end(),l->get_avg_corr_2x2().begin(),tmp_corr.begin(),std::plus<>{});
+        std::vector<double> tmp_step_corr;
+        tmp_step_corr.reserve(this->m_lattices[0]->get_avg_corr_2x2().size() * this->m_number_of_lattices);
+        for(Lattice * l : this->m_lattices)
+        {
+                for(double d : l->get_avg_corr_2x2())
+                {
+                        tmp_step_corr.push_back(d);
+                }
         }
-        std::transform(tmp_corr.begin(),tmp_corr.end(),tmp_corr.begin(),std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm));
-        return tmp_corr;
+        return tmp_step_corr;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> Wrapper::get_result_site_corr_1x1(){

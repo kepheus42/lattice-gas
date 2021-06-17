@@ -21,23 +21,19 @@ Site::Site(int id, int x, int y, int t) :
         D(std::cout << "Creating site: " << id << " at " << x << "," << y << std::endl);
 }
 
-bool Site::step_is_invalid(int dir){
-        // std::accumulate(bpv.begin()+(dir-1)*n_per_dir,bpv.begin()+dir*n_per_dir,true,[]( bool b, bool* bp )->bool{ return b&(*bp); })
-        // int tmp = 1;
-        // for(auto var : this->m_blocking_sites[dir-1]) { tmp *= (*var); }
-        // return tmp;
+bool Site::step_is_valid(int dir){
         /*
            ~ returns AND over all site states in the selected direction
            ~ true if all sites are empty
            ~ false otherwise
          */
-        return std::any_of(this->m_blocking_sites[dir-1].begin(), this->m_blocking_sites[dir-1].end(), []( Site * s ) -> bool {
-                return !(s->is_empty());
+        return std::all_of(this->m_blocking_sites[dir-1].begin(), this->m_blocking_sites[dir-1].end(), []( Site * s ) -> bool {
+                return s->is_empty();
         });
 }
 
 bool Site::get_blocking_site_state(int dir, int which){
-        return this->m_blocking_sites[dir][which]->is_empty();
+        return this->m_blocking_sites[dir-1][which]->is_empty();
 }
 
 std::vector<std::vector<Site * > > Site::get_blocking_sites(){

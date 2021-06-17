@@ -60,24 +60,32 @@ Lattice::Lattice(int timesteps,
         this->m_avg_rate_1x1.reserve(this->m_dpoints);
         this->m_avg_rate_2x2.reserve(this->m_dpoints);
 
-        this->m_avg_diff_1x1.reserve(this->m_dpoints);
-        this->m_avg_diff_2x2.reserve(this->m_dpoints);
-
         this->m_avg_lsq_1x1.reserve(this->m_dpoints);
         this->m_avg_lsq_2x2.reserve(this->m_dpoints);
 
-        this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? this->m_number_of_tracers_1x1 * (this->m_dpoints+1) : 0);
-        this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? this->m_number_of_tracers_2x2 * (this->m_dpoints+1) : 0);
+        this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? 2 * this->m_number_of_tracers_1x1 * (this->m_dpoints+1) : 0);
+        this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? 2 * this->m_number_of_tracers_2x2 * (this->m_dpoints+1) : 0);
+
+        this->m_displacements_1x1.reserve(this->m_number_of_tracers_1x1 ? 2 * this->m_number_of_tracers_1x1 * this->m_dpoints : 0);
+        this->m_displacements_2x2.reserve(this->m_number_of_tracers_2x2 ? 2 * this->m_number_of_tracers_2x2 * this->m_dpoints : 0);
 
         this->m_site_corr_1x1.reserve(this->m_number_of_tracers_2x2 ?  4*this->m_dpoints : 1*this->m_dpoints );
         this->m_site_corr_2x2.reserve(this->m_number_of_tracers_1x1 ?  9*this->m_dpoints : 3*this->m_dpoints );
 
-        this->m_site_corr_1x1_counter.reserve(this->m_number_of_tracers_1x1 ?  4*this->m_number_of_tracers_1x1*this->m_dpoints : 0 );
-        this->m_site_corr_2x2_counter.reserve(this->m_number_of_tracers_2x2 ?  4*this->m_number_of_tracers_2x2*this->m_dpoints : 0 );
+        //this->m_site_corr_1x1_counter.reserve(this->m_number_of_tracers_1x1 ?  4*this->m_number_of_tracers_1x1*this->m_dpoints : 0 );
+        //this->m_site_corr_2x2_counter.reserve(this->m_number_of_tracers_2x2 ?  4*this->m_number_of_tracers_2x2*this->m_dpoints : 0 );
+
+        this->m_sublattice_concentrations.reserve(this->m_number_of_tracers_2x2 ? 5 * this->m_dpoints : 0);
 
         // only allocate memory for sites if the respective tracer species is present
         this->m_sites_1x1.reserve(this->m_number_of_tracers_1x1 > 0 ? this->m_number_of_sites : 0);
         this->m_sites_2x2.reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites : 0);
+        // store sites_2x2 ordered by sublattice (1..4)
+        this->m_sites_2x2_by_sublattice.reserve(this->m_number_of_tracers_2x2 > 0 ? 4 : 0);
+        this->m_sites_2x2_by_sublattice[0].reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites/4 : 0);
+        this->m_sites_2x2_by_sublattice[1].reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites/4 : 0);
+        this->m_sites_2x2_by_sublattice[2].reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites/4 : 0);
+        this->m_sites_2x2_by_sublattice[3].reserve(this->m_number_of_tracers_2x2 > 0 ? this->m_number_of_sites/4 : 0);
         // this->m_sites.reserve(this->m_sites_1x1.capacity()+this->m_sites_2x2.capacity());
         // allocate sufficient memory for the tracers
         this->m_tracers.reserve(this->m_number_of_tracers);
@@ -122,6 +130,7 @@ void Lattice::setup_sites(){
                                 // this->m_sites.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_y, tmp_x, 2));
                                 // this->m_sites_2x2.push_back(this->m_sites.back());
                                 this->m_sites_2x2.push_back(new Site(this->coord(tmp_x,tmp_y), tmp_x, tmp_y, 2));
+                                this->m_sites_2x2_by_sublattice[(tmp_x%2)+2*(tmp_y%2)].push_back(this->m_sites_2x2.back());
                         }
                 }
         }
@@ -358,9 +367,10 @@ void Lattice::setup_tracers(){
                 }
                 //D( std::cout << "Number of Tracers 1x1: " << this->m_tracers_1x1.size() << std::endl);
         }
-        for(Tracer * tr : this->m_tracers_1x1) { this->m_pos_1x1.push_back(tr->get_pos()); }
-        for(Tracer * tr : this->m_tracers_2x2) { this->m_pos_2x2.push_back(tr->get_pos()); }
-        //D( std::cout << "Number of Tracers: " << this->m_tracers.size() << std::endl);
+        // Why did I implement storage of start position?
+        // for(Tracer * tr : this->m_tracers_1x1) { this->m_pos_1x1.push_back(tr->get_pos()); }
+        // for(Tracer * tr : this->m_tracers_2x2) { this->m_pos_2x2.push_back(tr->get_pos()); }
+        // D( std::cout << "Number of Tracers: " << this->m_tracers.size() << std::endl);
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // Transforms x,y to linear coordinate and back
@@ -379,32 +389,33 @@ void Lattice::warmup(){
         while(this->m_w < this->m_timesteps_w) { this->timestep_warmup(); }
 }
 void Lattice::evolve(){
+        this->store_initial_positions();
         while(this->m_t < this->m_timesteps) { this->timestep(); }
 }
 void Lattice::evolve_no_interaction(){
-        while(this->m_t < this->m_timesteps) { this->timestep_no_interaction(); }
+        while(this->m_t < this->m_timesteps) {  this->timestep_no_interaction(); }
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-void Lattice::timestep(){
+inline void Lattice::timestep(){
         for (int n=0; n < this->m_step_attempts_per_timestep; n++)
         {
                 this->m_tracers[this->m_movement_selector[this->m_random_par(this->m_rng)]]->step(this->m_random_dir(this->m_rng));
         }
         this->m_t++;
         D( this->print_tracers() );
-        if(this->m_t % (int)std::pow(10,(int)std::log10(this->m_t))) { return; }
+        if(this->m_t % this->m_dinterval) { return; }
         this->update_data();
         // D( this->print_tracer_positions() );
         // D( this->print_site_states() );
 }
-void Lattice::timestep_warmup(){
+inline void Lattice::timestep_warmup(){
         for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
                 this->m_tracers[this->m_movement_selector[this->m_random_par(this->m_rng)]]->step_warmup(this->m_random_dir(this->m_rng));
         }
         this->m_w++;
 }
-void Lattice::timestep_no_interaction(){
+inline void Lattice::timestep_no_interaction(){
         for (long n=0; n < this->m_step_attempts_per_timestep; n++)
         {
                 this->m_tracers[this->m_movement_selector[this->m_random_par(this->m_rng)]]->step_unhindered(this->m_random_dir(this->m_rng));
@@ -445,7 +456,6 @@ void Lattice::update_data(){
         //
         if(this->m_number_of_tracers_1x1) {
                 this->m_avg_rate_1x1.push_back(tmp_sum_stp_1x1*tmp_one_over_t*this->m_one_over_n_1x1);
-                this->m_avg_diff_1x1.push_back(tmp_sum_lsq_1x1*tmp_one_over_t*this->m_one_over_n_1x1);
                 this->m_avg_lsq_1x1.push_back(tmp_sum_lsq_1x1*this->m_one_over_n_1x1);
                 if(!this->m_number_of_tracers_2x2)
                 {
@@ -472,7 +482,6 @@ void Lattice::update_data(){
         }
         if(this->m_number_of_tracers_2x2) {
                 this->m_avg_rate_2x2.push_back(tmp_sum_stp_2x2*tmp_one_over_t*this->m_one_over_n_2x2);
-                this->m_avg_diff_2x2.push_back(tmp_sum_lsq_2x2*tmp_one_over_t*this->m_one_over_n_2x2);
                 this->m_avg_lsq_2x2.push_back(tmp_sum_lsq_2x2*this->m_one_over_n_2x2);
                 if(!this->m_number_of_tracers_1x1)
                 {
@@ -516,6 +525,16 @@ void Lattice::update_data(){
         //
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+void Lattice::store_initial_positions()
+{
+        for(Tracer * tr : this->m_tracers_1x1) {
+                this->m_pos_1x1.push_back(tr->get_pos());
+        }
+        for(Tracer * tr : this->m_tracers_2x2) {
+                this->m_pos_2x2.push_back(tr->get_pos());
+        }
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 int Lattice::get_number_of_tracers_1x1()
 {
         return this->m_number_of_tracers_1x1;
@@ -548,13 +567,6 @@ std::vector<double> Lattice::get_avg_rate_1x1(){
 }
 std::vector<double> Lattice::get_avg_rate_2x2(){
         return this->m_avg_rate_2x2;
-}
-/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<double> Lattice::get_avg_diff_1x1(){
-        return this->m_avg_diff_1x1;
-}
-std::vector<double> Lattice::get_avg_diff_2x2(){
-        return this->m_avg_diff_2x2;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> Lattice::get_avg_lsq_1x1(){

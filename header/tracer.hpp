@@ -2,6 +2,7 @@
 #define TRACER_H
 
 #include <vector>
+#include <boost/circular_buffer.hpp>
 #include <chrono>
 #include <iostream>
 #include <algorithm>
@@ -49,6 +50,9 @@ std::vector<int> get_site_correlation();
 int get_pos_corr(int);
 //
 std::vector<long> get_correlations();
+//
+std::vector<double> get_probabilities();
+//
 std::vector<std::vector<Site*> > get_blocking_sites();
 //
 
@@ -61,8 +65,9 @@ Site* m_site;
 // int m_dx;
 // int m_dy;
 // = = = = = = = = = = = = =
-std::vector<int> m_powers_of_four;
-std::vector<int> m_last_step_dir;
+// std::vector<int> m_powers_of_four;
+boost::circular_buffer<int> m_last_step_dir;
+// std::vector<int> m_last_step_idx;
 // Stores the last N moves of the tracer, with m_last_step_dir[0] being the most recent one.
 // This is used to compute the conditional likelyhoods for all possible step sequences with length up to N.
 // std::vector<int> m_last_step_idx;

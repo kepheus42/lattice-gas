@@ -18,9 +18,8 @@ Tracer::Tracer(int id, int type, Site * site) :
         m_id(id),
         m_type(type),
         m_site(site),
-        // m_steps_taken(0),
-        m_powers_of_four({1,4,16}),
-        m_last_step_dir(3,0),
+        // m_powers_of_four({1,4,16}),
+        m_last_step_dir(3), // ,0
         m_correlations(84,0),
         m_isstuck(false)
 {
@@ -32,21 +31,20 @@ Tracer::Tracer(int id, int type, Site * site) :
 // inline
 void Tracer::update_last_step(int last_step_dir)
 {
-        // shift m_last_step_dir by one position
-        std::rotate(this->m_last_step_dir.rbegin(),this->m_last_step_dir.rbegin()+1,this->m_last_step_dir.rend());
-        // overwrite the move that's now at pos 0 with the most recent one
-        this->m_last_step_dir[0] = last_step_dir;
+        this->m_last_step_dir.push_front(last_step_dir); // -1
+        // favored version:
+        // uses one STL function call
+        // this->m_correlations[std::transform_reduce(this->m_last_step_dir.begin(),this->m_last_step_dir.end(),this->m_powers_of_four.begin(),-1)]++;
+        // also workable:
+        // this->m_correlations[this->m_last_step_dir[0]+4*this->m_last_step_dir[1]+16*this->m_last_step_dir[2]-1]++;
+        // both versions require reworking getter functions, as 1- and 2-step correlations are no longer stored, but have to be calculated from 3-step correlations
+
         // temporary variables for sorting the resulting step sequences into the counting vector
         int tmp_n = 1;
         int tmp_idx = 0;
-        /*
-           TODO: rewrite with STL function
-
-         */
-        // std::accumulate(this->m_last_step_dir.begin(),this->m_last_step_dir.end(),this->m_powers_of_four.begin(),0,[](int dir, int pow) -> int { })
         for(int step : this->m_last_step_dir)
         {
-                tmp_idx += tmp_n*step;
+                tmp_idx += tmp_n * step;
                 tmp_n   *= 4;
                 this->m_correlations[tmp_idx-1] += !!step; // adding "not not step" results in incrementation, but only if step is not zero
         }
@@ -61,7 +59,7 @@ void Tracer::step(int dir){
         //D( std::cout << "dx " << this->m_dx << " dy " << this->m_dy << " MSD " << this->m_lsq << std::endl );
         D( std::cout << "Dir: " << dir << std::endl );
         // if(this->m_isstuck) { return; }
-        if( !(this->m_site->step_is_invalid(dir)) )
+        if( this->m_site->step_is_valid(dir) )
         {
                 // this->m_steps_taken++;
                 this->m_site = this->m_site->jump_in_direction(dir);
@@ -74,7 +72,7 @@ void Tracer::step(int dir){
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void Tracer::step_warmup(int dir){
         // if(this->m_isstuck) { return; }
-        if( !(this->m_site->step_is_invalid(dir)) ) {
+        if( this->m_site->step_is_valid(dir) ) {
                 // return; }
                 this->m_site = this->m_site->jump_in_direction(dir);
         }
@@ -134,6 +132,31 @@ bool Tracer::get_isstuck()
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<long> Tracer::get_correlations(){
         return this->m_correlations;
+}
+/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
+std::vector<double> Tracer::get_probabilities(){
+        // copy cast vector for probabilities (double)
+        std::vector<double> tmp_probabilities(this->m_correlations.begin(),this->m_correlations.end());
+        // calculate norm for 1-3 step sequences
+        double tmp_norm_1 = 1/(double)std::accumulate(this->m_correlations.begin()+0,this->m_correlations.begin()+4,0);
+        double tmp_norm_2 = 1/(double)std::accumulate(this->m_correlations.begin()+4,this->m_correlations.begin()+20,0);
+        double tmp_norm_3 = 1/(double)std::accumulate(this->m_correlations.begin()+20,this->m_correlations.end(),0);
+        // cast count vector to double
+        // apply norm
+        std::transform(tmp_probabilities.begin()+0,
+                       tmp_probabilities.begin()+4,
+                       tmp_probabilities.begin(),
+                       std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm_1));
+        std::transform(tmp_probabilities.begin()+4,
+                       tmp_probabilities.begin()+20,
+                       tmp_probabilities.begin()+4,
+                       std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm_2));
+        std::transform(tmp_probabilities.begin()+20,
+                       tmp_probabilities.end(),
+                       tmp_probabilities.begin()+20,
+                       std::bind(std::multiplies<double>(), std::placeholders::_1, tmp_norm_3));
+        // return result
+        return tmp_probabilities;
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<std::vector<Site*> > Tracer::get_blocking_sites(){

@@ -50,9 +50,6 @@ void update_positions_2x2();
 std::vector<double> get_result_rate_1x1();
 std::vector<double> get_result_rate_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
-std::vector<double> get_result_diff_1x1();
-std::vector<double> get_result_diff_2x2();
-/* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> get_result_lsq_1x1();
 std::vector<double> get_result_lsq_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */

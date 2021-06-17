@@ -9,7 +9,7 @@
 class Site {
 public:
 Site(int,int,int,int);
-bool step_is_invalid(int);
+bool step_is_valid(int);
 bool get_blocking_site_state(int,int);
 std::vector<unsigned int> blocking_site_corr();
 std::vector<std::vector<Site *> > get_blocking_sites();

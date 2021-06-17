@@ -53,10 +53,6 @@ std::vector<Tracer *> get_tracers_2x2();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 std::vector<double> get_avg_rate_1x1();
 std::vector<double> get_avg_rate_2x2();
-
-std::vector<double> get_avg_diff_1x1();
-std::vector<double> get_avg_diff_2x2();
-
 std::vector<double> get_avg_lsq_1x1();
 std::vector<double> get_avg_lsq_2x2();
 std::vector<double> get_avg_corr_1x1();
@@ -114,6 +110,7 @@ double m_one_over_four_n_2x2;
 // std::vector<Site*> m_sites;
 std::vector<Site*> m_sites_1x1;
 std::vector<Site*> m_sites_2x2;
+std::vector<std::vector <Site*> > m_sites_2x2_by_sublattice;
 // to store the tracer objects
 std::vector<Tracer*> m_tracers;
 std::vector<Tracer*> m_tracers_1x1;
@@ -121,14 +118,18 @@ std::vector<Tracer*> m_tracers_2x2;
 // to store data
 std::vector<double> m_avg_rate_1x1;
 std::vector<double> m_avg_rate_2x2;
-std::vector<double> m_avg_diff_1x1;
-std::vector<double> m_avg_diff_2x2;
 std::vector<double> m_avg_lsq_1x1;
 std::vector<double> m_avg_lsq_2x2;
 std::vector<double> m_site_corr_1x1;
 std::vector<double> m_site_corr_2x2;
+
 std::vector<int> m_pos_1x1;
 std::vector<int> m_pos_2x2;
+
+std::vector<int> m_displacements_1x1;
+std::vector<int> m_displacements_2x2;
+
+std::vector<double> m_sublattice_concentrations;
 
 std::vector<int> m_site_corr_1x1_counter;
 std::vector<int> m_site_corr_2x2_counter;
