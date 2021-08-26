@@ -34,6 +34,7 @@ void timestep_warmup();
 void timestep_no_interaction();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void update_data();
+void store_initial_positions();
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 void set_rng_seed(int);
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
@@ -111,7 +112,7 @@ double m_one_over_four_n_2x2;
 std::vector<Site*> m_sites_1x1;
 std::vector<Site*> m_sites_2x2;
 std::vector<std::vector <Site*> > m_sites_2x2_by_sublattice;
-// to store the tracer objects
+// to w the tracer objects
 std::vector<Tracer*> m_tracers;
 std::vector<Tracer*> m_tracers_1x1;
 std::vector<Tracer*> m_tracers_2x2;

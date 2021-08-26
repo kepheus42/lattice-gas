@@ -63,8 +63,8 @@ Lattice::Lattice(int timesteps,
         this->m_avg_lsq_1x1.reserve(this->m_dpoints);
         this->m_avg_lsq_2x2.reserve(this->m_dpoints);
 
-        this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? 2 * this->m_number_of_tracers_1x1 * (this->m_dpoints+1) : 0);
-        this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? 2 * this->m_number_of_tracers_2x2 * (this->m_dpoints+1) : 0);
+        this->m_pos_1x1.reserve(this->m_number_of_tracers_1x1 ? this->m_number_of_tracers_1x1 * (this->m_dpoints+1) : 0);
+        this->m_pos_2x2.reserve(this->m_number_of_tracers_2x2 ? this->m_number_of_tracers_2x2 * (this->m_dpoints+1) : 0);
 
         this->m_displacements_1x1.reserve(this->m_number_of_tracers_1x1 ? 2 * this->m_number_of_tracers_1x1 * this->m_dpoints : 0);
         this->m_displacements_2x2.reserve(this->m_number_of_tracers_2x2 ? 2 * this->m_number_of_tracers_2x2 * this->m_dpoints : 0);
@@ -393,6 +393,7 @@ void Lattice::evolve(){
         while(this->m_t < this->m_timesteps) { this->timestep(); }
 }
 void Lattice::evolve_no_interaction(){
+        this->store_initial_positions();
         while(this->m_t < this->m_timesteps) {  this->timestep_no_interaction(); }
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */

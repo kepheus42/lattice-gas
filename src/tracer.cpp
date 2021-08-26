@@ -32,6 +32,10 @@ Tracer::Tracer(int id, int type, Site * site) :
 void Tracer::update_last_step(int last_step_dir)
 {
         this->m_last_step_dir.push_front(last_step_dir); // -1
+        // = = = = = = = = = = = =
+        // TODO: update to storing of only 2 steps, use function variable last_step_dir for calculations and push_front(last_step_dir) at the end
+        // this->m_correlations[last_step_dir - 1]++;  // NEW
+        // = = = = = = = = = = = =
         // favored version:
         // uses one STL function call
         // this->m_correlations[std::transform_reduce(this->m_last_step_dir.begin(),this->m_last_step_dir.end(),this->m_powers_of_four.begin(),-1)]++;
@@ -41,13 +45,16 @@ void Tracer::update_last_step(int last_step_dir)
 
         // temporary variables for sorting the resulting step sequences into the counting vector
         int tmp_n = 1;
+        // int tmp_n = 4; // NEW
         int tmp_idx = 0;
+        // int tmp_idx = last_step_dir;  // NEW
         for(int step : this->m_last_step_dir)
         {
                 tmp_idx += tmp_n * step;
                 tmp_n   *= 4;
                 this->m_correlations[tmp_idx-1] += !!step; // adding "not not step" results in incrementation, but only if step is not zero
         }
+        // this->m_last_step_dir.push_front(last_step_dir); // NEW
 }
 /* = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 // function for random walk stepping
